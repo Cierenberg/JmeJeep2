@@ -23,7 +23,7 @@ public class Hud {
     private BitmapFont arialFont;
     private BitmapText guiText[] = new BitmapText[5];
     private float[] padPosition = {0, 0, 0, 0};
-    private long targetTime = System.currentTimeMillis() + 1000 * 60 * 10;
+    private long targetTime = Long.MAX_VALUE;
     
     private Hud() {
     }
@@ -38,6 +38,14 @@ public class Hud {
         this.arialFont = this.parent.getAssetManager().loadFont("Interface/Fonts/digital.fnt");
     }
     
+    public void startTargetTime() {
+        this.targetTime = System.currentTimeMillis() + 1000 * 60 * 10;
+    }
+    
+    public boolean isTagetTimeStarted() {
+        return this.targetTime != Long.MAX_VALUE;
+    }
+    
     public void setText(String text, ColorRGBA color) {
         if (this.guiText[0] != null) {
             this.guiText[0].setColor(color);
@@ -47,6 +55,7 @@ public class Hud {
     
     public void update() {
         if (this.guiNode != null) {
+                              
             float[] displayDimension = {this.parent.getAppSettings().getWidth(), this.parent.getAppSettings().getHeight()}; 
             this.guiNode.detachAllChildren();
             Picture pic = new Picture("Gear Picture");
@@ -57,54 +66,62 @@ public class Hud {
             }
             float width = displayDimension[0] / 10;
             float margin = width / 8;
-            pic.setWidth(width);
-            pic.setHeight(width / 2);
-            pic.setPosition(displayDimension[0] - width - margin, displayDimension[1] - (width / 2) - margin);
-            this.guiNode.attachChild(pic); 
-            
-           
-    
-            
-            Picture picNadel = new Picture("Gear Picture");
-            
-            picNadel.setImage(this.parent.getAssetManager(), "Textures/zeiger.png", true);
-            picNadel.rotate(0, 0,(float) ((180 - this.parent.getJeep().getSpeed()) * Math.PI / 180.0));
-            width = displayDimension[0] / 10;
-            margin = width / 8;
-            picNadel.setWidth(width);
-            picNadel.setHeight(2);
-            picNadel.setPosition(displayDimension[0] - width - margin, displayDimension[1] - 2 * width - margin );
-            this.guiNode.attachChild(picNadel); 
-            
-            
+            if (!this.parent.getJeep().isGameOver()) {  
+                pic.setWidth(width);
+                pic.setHeight(width / 2);
+                pic.setPosition(displayDimension[0] - width - margin, displayDimension[1] - (width / 2) - margin);
+                this.guiNode.attachChild(pic); 
+
+
+
+
+                Picture picNadel = new Picture("Tacho pin");
+                picNadel.setImage(this.parent.getAssetManager(), "Textures/zeiger.png", true);
+                picNadel.rotate(0, 0,(float) ((190 - this.parent.getJeep().getSpeed()) * Math.PI / 180.0));
+                width = displayDimension[0] / 10;
+                margin = width / 8;
+                picNadel.setWidth(width);
+                picNadel.setHeight(2);
+                picNadel.setPosition(displayDimension[0] - width - margin, displayDimension[1] - 2 * width - margin );
+                this.guiNode.attachChild(picNadel); 
+
+                Picture picTacho = new Picture("Tacho back");
+                picTacho.setImage(this.parent.getAssetManager(), "Textures/tacho.png", true);
+                picTacho.setWidth(2 * width);
+                picTacho.setHeight(1.5f * width);
+                picTacho.setPosition(displayDimension[0] - 2 * width - margin, displayDimension[1] - 2 * width - 3 * margin);
+                this.guiNode.attachChild(picTacho); 
+            }
             
             long moveDuration = this.parent.getJeep().getLastMoveDuration();
             
-            long milliesLeft = this.targetTime - System.currentTimeMillis();;
-            if (milliesLeft < 0 && !this.parent.getJeep().isGameOver()) {
-                this.parent.getJeep().setGameOver();
-            } else {
-                long seconds = milliesLeft / 1000;
-                long minute = seconds / 60;
-                seconds -= minute * 60;
-                String textTime = minute + "Min " + seconds + "Sek";
-                String textSpeed = "Km/h: " + this.parent.getJeep().getSpeed();
-//                System.out.println(text);
-                BitmapText textDisplayTime = new BitmapText(this.arialFont, false);
-                BitmapText textDisplaySpeed = new BitmapText(this.arialFont, false);
-                
-                textDisplayTime.setSize(this.arialFont.getCharSet().getRenderedSize() * 1); 
-                textDisplayTime.setColor((milliesLeft < 60000)?ColorRGBA.Red:ColorRGBA.Green);
-                textDisplayTime.setText(textTime);
-                textDisplayTime.setLocalTranslation(10f, 40f, 10f);
-                
-                textDisplaySpeed.setSize(this.arialFont.getCharSet().getRenderedSize() * 2); 
-                textDisplaySpeed.setColor(ColorRGBA.Blue);
-                textDisplaySpeed.setText(textSpeed);
-                textDisplaySpeed.setLocalTranslation(10f, 100f, 10f);
-                if (!this.parent.getJeep().isGameOver()) {
-                    this.guiNode.attachChild(textDisplayTime);    
-                    this.guiNode.attachChild(textDisplaySpeed);
+            if (this.isTagetTimeStarted()) {
+                long milliesLeft = this.targetTime - System.currentTimeMillis();
+                if (milliesLeft < 0 && !this.parent.getJeep().isGameOver()) {
+                    this.parent.getJeep().setGameOver();
+                } else {
+                    long seconds = milliesLeft / 1000;
+                    long minute = seconds / 60;
+                    seconds -= minute * 60;
+                    String textTime = minute + "Min " + seconds + "Sek";
+//                    String textSpeed = "Km/h: " + this.parent.getJeep().getSpeed();
+    //                System.out.println(text);
+                    BitmapText textDisplayTime = new BitmapText(this.arialFont, false);
+//                    BitmapText textDisplaySpeed = new BitmapText(this.arialFont, false);
+
+                    textDisplayTime.setSize(this.arialFont.getCharSet().getRenderedSize() * 2); 
+                    textDisplayTime.setColor((milliesLeft < 60000)?ColorRGBA.Red:ColorRGBA.Green);
+                    textDisplayTime.setText(textTime);
+                    textDisplayTime.setLocalTranslation(10f, 40f, 10f);
+
+//                    textDisplaySpeed.setSize(this.arialFont.getCharSet().getRenderedSize() * 2); 
+//                    textDisplaySpeed.setColor(ColorRGBA.Blue);
+//                    textDisplaySpeed.setText(textSpeed);
+//                    textDisplaySpeed.setLocalTranslation(10f, 100f, 10f);
+                    if (!this.parent.getJeep().isGameOver()) {
+                        this.guiNode.attachChild(textDisplayTime);    
+//                        this.guiNode.attachChild(textDisplaySpeed);
+                   }
                 }
             }
                      

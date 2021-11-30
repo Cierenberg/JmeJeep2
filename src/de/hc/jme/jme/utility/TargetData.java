@@ -8,6 +8,7 @@ package de.hc.jme.jme.utility;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
+import de.hc.jme.gui.hud.Hud;
 import fe.hc.jme.models.Barrel;
 import fe.hc.jme.models.BarrelPyramid;
 import fe.hc.jme.models.BarrelTower;
@@ -50,6 +51,9 @@ public class TargetData {
         if (TargetData.currentNode != null) {
             parent.getRootNode().detachChild(TargetData.currentNode);
             Barrel.removeAllControls(parent);
+            if (!Hud.getDefault().isTagetTimeStarted()) {
+                Hud.getDefault().startTargetTime();
+            }
         }
         System.out.println(parent.getIsle());
         if (TargetData.map.get(parent.getIsle()) != null && TargetData.map.get(parent.getIsle()).size() > TargetData.level[parent.getIsle()]) {

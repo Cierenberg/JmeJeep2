@@ -38,9 +38,12 @@ public class Jeep2 {
     private TestPhysicsCar parent;
     private AssetManager assetManager;
     private VehicleControl vehicle;
-    private float accelerationForce = 250.0f;
-    private float brakeForce = 20.0f;
-    private float steeringValue = 0.45f;
+    private float maxAccelerationForce = 0.3f;
+    private float maxSpeed = 150;
+    private float brakeForce = 60.0f;
+    private float maxSteeringValue = 0.45f;
+    private float currentSteeringValue = 0.0f;
+    private float steeringDeltaValue = 0.1f;    
     private float accelerationValue = 0;
     final private Vector3f jumpForce = new Vector3f(0, 2000, 0);
     private Node vehicleNode;
@@ -67,6 +70,13 @@ public class Jeep2 {
     private float bodyRotationFaktor = .6f;
     private float rollRotation = 0;
     private int steering = 0;
+    boolean key[][] = 
+    {
+        {false,false,false},
+        {false,false,false},
+        {false,false,false}
+    };
+    private long lastPressed = System.currentTimeMillis();
     
     public Jeep2(TestPhysicsCar parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
@@ -95,6 +105,70 @@ public class Jeep2 {
     
     public long getLastMoveDuration() {
         return System.currentTimeMillis() - this.lastPositionChange;
+    }
+    
+    public void updateKeys() {
+        float speed = Math.min(this.maxSpeed, this.getSpeed());
+        float accelerationPower = 1 - speed / this.maxSpeed;
+        
+        
+        
+        float accelerationForce = accelerationPower * this.maxAccelerationForce;
+        if (this.key[0][1]) {
+            if (accelerationPower == 1 && !this.sport) {
+                this.turbo();
+            }
+            if (this.forward) {
+                this.accelerationValue += accelerationForce;
+            } else {
+                this.accelerationValue -= accelerationForce;
+            }
+            this.vehicle.accelerate(this.accelerationValue);    
+        } else {
+            this.accelerationValue = 0;
+            this.vehicle.accelerate(this.accelerationValue);
+        }
+        
+        if (this.key[2][1]) {
+            this.vehicle.brake(this.brakeForce);
+        } else {
+            this.vehicle.brake(0f);
+        }
+
+        if (this.key[1][0]) {
+            if (this.currentSteeringValue < this.maxSteeringValue) {
+                this.currentSteeringValue += this.steeringDeltaValue;
+            }
+            this.steering = -1;
+        } else if (this.key[1][2]) {
+            if (this.currentSteeringValue > -1 * this.maxSteeringValue) {
+                this.currentSteeringValue -= this.steeringDeltaValue;
+            }
+            this.steering = 1;
+        } else {
+            if (this.currentSteeringValue < 0) {
+                this.currentSteeringValue += this.steeringDeltaValue;
+            }
+            if (this.currentSteeringValue > 0) {
+                this.currentSteeringValue -= this.steeringDeltaValue;
+            }
+            if (this.currentSteeringValue > -1 * this.steeringDeltaValue && this.currentSteeringValue < this.steeringDeltaValue) {
+                this.currentSteeringValue = 0;
+            }
+            this.steering = 0;
+        }
+        this.vehicle.steer(this.currentSteeringValue);
+        
+        
+        
+        
+        
+        this.key = new boolean[][]
+        {
+            {false,false,false},
+            {false,false,false},
+            {false,false,false}
+        };        
     }
     
     public void updateBodyEffects() {
@@ -157,6 +231,7 @@ public class Jeep2 {
     public void updateCam(){
         if (!this.gameOver) {
             this.updateBodyEffects();
+            this.updateKeys();
             if (this.vehicle.getPhysicsLocation().y < 1) {
                 this.setGameOver();
             }
@@ -309,8 +384,9 @@ public class Jeep2 {
             stiffness =  140f;//200=f1 car
             compValue = .3f; //(should be lower than damp)
             dampValue = .6f;
-            this.accelerationForce += 100f;
-            this.steeringValue = .5f;
+            this.maxAccelerationForce *= 1.2f;
+            this.maxSpeed *= 1.5f;
+            this.maxSteeringValue = .5f;
         }
         this.vehicle.setSuspensionCompression(compValue * 2.0f * FastMath.sqrt(stiffness));
         this.vehicle.setSuspensionDamping(dampValue * 2.0f * FastMath.sqrt(stiffness));
@@ -323,8 +399,8 @@ public class Jeep2 {
         float yOff = 0.5f;
         float xOff = 1f;
         float zOff = 1.8f;
-        this.vehicle.setFriction(.4f);
-        this.vehicle.setFrictionSlip(2f);
+        this.vehicle.setFriction(0.0005f);
+        this.vehicle.setFrictionSlip(3f);
         Material mat_wheel = new Material(
             assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
 //        Material mat_wheel = new Material(
@@ -391,36 +467,32 @@ public class Jeep2 {
         return this.vehicle;
     }
     
-    public void steerLeft(boolean hold) {
-        if (!this.gameOver){
-            if (hold) {
-                this.vehicle.steer(this.steeringValue);
-                this.steering = -1;
-            } else {
-                this.vehicle.steer(0f);
-                this.steering = 0;
-            }
-        }
+    public void steerLeft() {
+       this.key[1][0] = true;
     }
     
-    public void steerRight(boolean hold) {
-        if (!this.gameOver){
-            if (hold) {
-                this.steering = 1;
-                this.vehicle.steer(-1 * this.steeringValue);
-            } else {
-                this.vehicle.steer(0f);
-                this.steering = 0;
-            }
-        }
+    public void steerRight() {
+       this.key[1][2] = true;
     }
+
     
     public void jump() {
         this.vehicle.applyImpulse(this.jumpForce, Vector3f.ZERO);
     }
 
+    public void turbo() {
+        if (this.forward) {
+            this.vehicle.applyImpulse(this.vehicleNode.getLocalRotation().getRotationColumn(2).mult(20f), this.vehicleNode.getLocalRotation().getRotationColumn(2));
+        } else {
+            this.vehicle.applyImpulse(this.vehicleNode.getLocalRotation().getRotationColumn(2).mult(20f).negateLocal(), this.vehicleNode.getLocalRotation().getRotationColumn(2).negateLocal());
+        }
+    }
+    
     public int getSpeed() {
-        return this.metrics.getSpeed();
+        if (this.metrics != null) {
+            return this.metrics.getSpeed();
+        }
+        return 0;
     }
     
     private void explode() {     
@@ -464,40 +536,24 @@ public class Jeep2 {
     }
 
     
-    public void accelerate(boolean hold) {
+    public void accelerate() {
         if (!this.gameOver){
-            if (this.forward) {
-                if (hold) {
-                    this.accelerationValue += this.accelerationForce;
-                } else {
-                    this.accelerationValue -= this.accelerationForce;
-                }
-            } else {
-                if (hold) {
-                    this.accelerationValue -= this.accelerationForce;
-                } else {
-                    this.accelerationValue += this.accelerationForce;
-                }
-            }
-            this.vehicle.accelerate(this.accelerationValue);
+           this.key[0][1] = true;
         }
     }
 
-    public void shift(boolean hold) {
-        if (!hold) {
+    public void shift() {
+        if (System.currentTimeMillis() - this.lastPressed > 1000) {
             this.forward = !this.forward;
+            this.lastPressed = System.currentTimeMillis();
         }
     }
 
-    public void brake(boolean hold) {
+    public void brake() {
         if (!this.gameOver){
-            if (hold) {
-                this.vehicle.brake(this.brakeForce);
-            } else {
-                this.vehicle.brake(0f);
-            }
+           this.key[2][1] = true;
         }
-    }
+     }
     
     public void resetRotation() {
 //                vehicle.setPhysicsLocation(Vector3f.ZERO);

@@ -38,7 +38,7 @@ import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.KeyInput;
-import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
@@ -54,10 +54,8 @@ import de.hc.jme.jme.models.vehicle.Jeep2;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import de.hc.jme.jme.utility.Utility;
 import de.hc.jme.terrain.Island;
-import fe.hc.jme.models.BarrelPyramid;
-import fe.hc.jme.models.BarrelTower;
 
-public class TestPhysicsCar extends SimpleApplication implements ActionListener {
+public class TestPhysicsCar extends SimpleApplication {
 
     private BulletAppState bulletAppState;
     private Jeep2 jeep; 
@@ -71,6 +69,10 @@ public class TestPhysicsCar extends SimpleApplication implements ActionListener 
 
     @Override
     public void simpleInitApp() {
+        this.setDisplayFps(true);
+        AppSettings newSettings = new AppSettings(true);
+        newSettings.setFrameRate(30);
+        setSettings(newSettings);
         bulletAppState = new BulletAppState();
         stateManager.attach(bulletAppState);
         bulletAppState.setDebugEnabled(false);
@@ -131,22 +133,49 @@ public class TestPhysicsCar extends SimpleApplication implements ActionListener 
         return bulletAppState.getPhysicsSpace();
     }
 
+        private final AnalogListener analogListener = new AnalogListener() {
+        public void onAnalog(String binding, float value, float tpf) {
+            if (binding.equals("Lefts")) {
+                jeep.steerLeft();
+            } 
+            if (binding.equals("Rights")) {
+                jeep.steerRight(); 
+            }
+            if (binding.equals("Ups")) {
+                jeep.accelerate();
+            }
+            if (binding.equals("Downs")) {
+               jeep.brake();
+            }
+            if (binding.equals("Space")) {
+               jeep.jump();
+            }
+            if (binding.equals("Reset")) {
+               jeep.turbo();
+            }
+            if (binding.equals("Gear")) {
+               jeep.shift();
+            }
+        }
+    };
+
+    
     private void setupKeys() {
-        inputManager.addMapping("Lefts", new KeyTrigger(KeyInput.KEY_LEFT));
-        inputManager.addMapping("Rights", new KeyTrigger(KeyInput.KEY_RIGHT));
-        inputManager.addMapping("Ups", new KeyTrigger(KeyInput.KEY_UP));
-        inputManager.addMapping("Downs", new KeyTrigger(KeyInput.KEY_DOWN));
-        inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
-        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
-        inputManager.addMapping("Gear", new KeyTrigger(KeyInput.KEY_RCONTROL));
+        this.inputManager.addMapping("Lefts", new KeyTrigger(KeyInput.KEY_LEFT));
+        this.inputManager.addMapping("Rights", new KeyTrigger(KeyInput.KEY_RIGHT));
+        this.inputManager.addMapping("Ups", new KeyTrigger(KeyInput.KEY_UP));
+        this.inputManager.addMapping("Downs", new KeyTrigger(KeyInput.KEY_DOWN));
+        this.inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
+        this.inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
+        this.inputManager.addMapping("Gear", new KeyTrigger(KeyInput.KEY_RCONTROL));
         
-        inputManager.addListener(this, "Lefts");
-        inputManager.addListener(this, "Rights");
-        inputManager.addListener(this, "Ups");
-        inputManager.addListener(this, "Downs");
-        inputManager.addListener(this, "Space");
-        inputManager.addListener(this, "Reset");
-        inputManager.addListener(this, "Gear");
+        this.inputManager.addListener(this.analogListener, "Lefts");
+        this.inputManager.addListener(this.analogListener, "Rights");
+        this.inputManager.addListener(this.analogListener, "Ups");
+        this.inputManager.addListener(this.analogListener, "Downs");
+        this.inputManager.addListener(this.analogListener, "Space");
+        this.inputManager.addListener(this.analogListener, "Reset");
+        this.inputManager.addListener(this.analogListener, "Gear");
     }
 
     public Geometry getGeometry(Spatial spatial){
@@ -177,24 +206,5 @@ public class TestPhysicsCar extends SimpleApplication implements ActionListener 
     public void simpleUpdate(float tpf) {
         this.jeep.updateCam();
         Hud.getDefault().update();
-    }
-
-    @Override
-    public void onAction(String binding, boolean value, float tpf) {
-        if (binding.equals("Lefts")) {
-            this.jeep.steerLeft(value);
-        } else if (binding.equals("Rights")) {
-            this.jeep.steerRight(value);
-        } else if (binding.equals("Ups")) {
-                this.jeep.accelerate(value);
-        } else if (binding.equals("Downs")) {
-           this.jeep.brake(value);
-        } else if (binding.equals("Space")) {
-            this.jeep.jump();
-        } else if (binding.equals("Reset")) {
-            this.jeep.resetRotation();
-        } else if (binding.equals("Gear")) {
-            this.jeep.shift(value);
-        }
     }
 }
