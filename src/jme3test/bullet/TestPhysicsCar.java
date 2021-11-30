@@ -133,7 +133,7 @@ public class TestPhysicsCar extends SimpleApplication {
         return bulletAppState.getPhysicsSpace();
     }
 
-        private final AnalogListener analogListener = new AnalogListener() {
+    private final AnalogListener analogListener = new AnalogListener() {
         public void onAnalog(String binding, float value, float tpf) {
             if (binding.equals("Lefts")) {
                 jeep.steerLeft();

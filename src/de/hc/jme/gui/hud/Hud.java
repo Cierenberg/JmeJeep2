@@ -39,7 +39,8 @@ public class Hud {
     }
     
     public void startTargetTime() {
-        this.targetTime = System.currentTimeMillis() + 1000 * 60 * 10;
+        this.targetTime = System.currentTimeMillis() + 1000 * 60 * 7;
+//        this.targetTime = System.currentTimeMillis() + 1000 * 10;
     }
     
     public boolean isTagetTimeStarted() {

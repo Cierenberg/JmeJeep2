@@ -28,7 +28,9 @@ import com.jme3.scene.Node;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import fe.hc.jme.models.Arrow;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -77,6 +79,7 @@ public class Jeep2 {
         {false,false,false}
     };
     private long lastPressed = System.currentTimeMillis();
+    private Map<Node, Spatial> wheelMap = new HashMap<Node, Spatial>();
     
     public Jeep2(TestPhysicsCar parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
@@ -318,7 +321,7 @@ public class Jeep2 {
         
         
         if (this.sport) {
-            this.bodyRotation /= 2;
+            this.bodyRotation /= 3;
             mat_body = new Material(
                 assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             mat_body.setTexture("ColorMap",
@@ -399,8 +402,8 @@ public class Jeep2 {
         float yOff = 0.5f;
         float xOff = 1f;
         float zOff = 1.8f;
-        this.vehicle.setFriction(0.0005f);
-        this.vehicle.setFrictionSlip(3f);
+        this.vehicle.setFriction(0.6f);
+        this.vehicle.setFrictionSlip(1f);
         Material mat_wheel = new Material(
             assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
 //        Material mat_wheel = new Material(
@@ -420,6 +423,7 @@ public class Jeep2 {
         wheelfr.rotate(0, FastMath.PI, 0);
         wheelfr.scale(0.7f, 0.7f, 0.7f);
         wheelfr.setShadowMode(RenderQueue.ShadowMode.Cast);            
+        this.wheelMap.put(node1, wheelfr);
         this.vehicle.addWheel(node1, new Vector3f(-xOff, yOff, zOff),
                 wheelDirection, wheelAxle, restLength, radius, true);
         Node node2 = new Node("wheel 2 node");
@@ -428,6 +432,7 @@ public class Jeep2 {
         node2.attachChild(wheelfl);
         wheelfl.scale(0.7f, 0.7f, 0.7f);
         wheelfl.setShadowMode(RenderQueue.ShadowMode.Cast);
+        this.wheelMap.put(node2, wheelfl);
         this.vehicle.addWheel(node2, new Vector3f(xOff, yOff, zOff),
                 wheelDirection, wheelAxle, restLength, radius, true);
         Node node3 = new Node("wheel 3 node");
@@ -437,6 +442,7 @@ public class Jeep2 {
         wheelrr.rotate(0, FastMath.PI, 0);
         wheelrr.scale(0.7f, 0.7f, 0.7f);
         wheelrr.setShadowMode(RenderQueue.ShadowMode.Cast);
+        this.wheelMap.put(node3, wheelrr);
         vehicle.addWheel(node3, new Vector3f(-xOff, yOff, -0.2f-zOff),
                 wheelDirection, wheelAxle, restLength, radius, false);
         Node node4 = new Node("wheel 4 node");
@@ -445,6 +451,7 @@ public class Jeep2 {
         node4.attachChild(wheelrl);
         wheelrl.scale(0.7f, 0.7f, 0.7f);
         wheelrl.setShadowMode(RenderQueue.ShadowMode.Cast);
+        this.wheelMap.put(node4, wheelrl);
         vehicle.addWheel(node4, new Vector3f(xOff, yOff, -0.2f-zOff),
                 wheelDirection, wheelAxle, restLength, radius, false);
         this.vehicleNode.attachChild(node1);
@@ -520,6 +527,37 @@ public class Jeep2 {
         explosion.setImagesX(1); // columns
         explosion.setImagesY(1); // rows
         explosion.setSelectRandomImage(false);
+        
+        
+        this.vehicle.removeWheel(0);
+        this.vehicle.removeWheel(0);
+        this.vehicle.removeWheel(0);
+        this.vehicle.removeWheel(0);
+        
+        Material mat_wheel = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        mat_wheel.setTexture("ColorMap",
+            assetManager.loadTexture("Textures/Rad_alpha.png"));
+        
+        for (Node node : this.wheelMap.keySet()) {
+            Node tmp = new Node();
+            tmp.setLocalTranslation(node.getWorldTranslation());
+            tmp.setLocalRotation(node.getWorldRotation());
+            this.vehicleNode.detachChild(node);
+            this.wheelMap.get(node).setMaterial(mat_wheel);
+            tmp.attachChild(this.wheelMap.get(node));
+            this.parent.getRootNode().attachChild(tmp);
+            
+            RigidBodyControl rbc = new RigidBodyControl(1f);
+            this.wheelMap.get(node).addControl(rbc);
+            this.parent.getPhysicsSpace().add(rbc);
+            if (this.forward) {
+               rbc.applyImpulse(this.vehicleNode.getLocalRotation().getRotationColumn(2).mult(this.getSpeed()), this.vehicleNode.getLocalRotation().getRotationColumn(2));
+            } else {
+                this.vehicle.applyImpulse(this.vehicleNode.getLocalRotation().getRotationColumn(2).mult(this.getSpeed()).negateLocal(), this.vehicleNode.getLocalRotation().getRotationColumn(2).negateLocal());
+            }
+        }
+        
+        
         this.vehicle.applyImpulse(new Vector3f(1000, 20000, 100), Vector3f.ZERO);
     }
       
@@ -561,5 +599,9 @@ public class Jeep2 {
         vehicle.setLinearVelocity(Vector3f.ZERO);
         vehicle.setAngularVelocity(Vector3f.ZERO);
         vehicle.resetSuspension();
+    }
+
+    private void put(Node node1, Spatial wheelfr) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
