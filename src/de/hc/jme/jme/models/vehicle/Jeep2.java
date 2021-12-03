@@ -6,6 +6,8 @@
 package de.hc.jme.jme.models.vehicle;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioNode;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
@@ -15,6 +17,7 @@ import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.effect.ParticleEmitter;
 import com.jme3.effect.ParticleMesh.Type;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
@@ -25,6 +28,7 @@ import com.jme3.math.Matrix3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Node;
+import de.hc.jme.gui.hud.Hud;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import fe.hc.jme.models.Arrow;
 import java.util.ArrayList;
@@ -60,6 +64,7 @@ public class Jeep2 {
     private Arrow arrow;
     private long lastPositionChange = Long.MAX_VALUE;
     public boolean gameOver = false;
+    public boolean congratulation = false;
     public long gameOverSince = Long.MAX_VALUE;
     private MovingMetrics metrics;
     private Spatial body = null;
@@ -69,7 +74,7 @@ public class Jeep2 {
     private float bodyRotation = 0.05f;
     private float targetRoll = 0f;
     private float curentRoll = 0f;
-    private float bodyRotationFaktor = .6f;
+    private final float bodyRotationFaktor = .6f;
     private float rollRotation = 0;
     private int steering = 0;
     boolean key[][] = 
@@ -79,18 +84,69 @@ public class Jeep2 {
         {false,false,false}
     };
     private long lastPressed = System.currentTimeMillis();
-    private Map<Node, Spatial> wheelMap = new HashMap<Node, Spatial>();
+    private final Map<Node, Spatial> wheelMap = new HashMap<Node, Spatial>();
+    private final Map<Long, Node> particleEmitterMap = new HashMap<>();
+    private final Map<Node, ParticleEmitter> particleEmitterMap2 = new HashMap<>();
+    private final Material smokeMat; 
+    private AudioNode audioGo = null;   
+    private AudioNode audioRun = null;
+    private AudioNode audioVelo = null;
+    private AudioNode audioHorn = null;
+    private AudioNode audioBack = null;
+    
     
     public Jeep2(TestPhysicsCar parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
         this.sport = sport;
         this.rotateY = rotateY;
         Float offY = this.parent.getEnvironmentHeight(initPosition.x, initPosition.z);
-           if (offY != null) {
-                initPosition.y = offY + 2f;
-           }       
+        if (offY != null) {
+             initPosition.y = offY + 2f;
+        }
+        this.vehicleNode = new Node("vehicleNode");
         this.assetManager = this.parent.getAssetManager();
+        this.smokeMat = new Material(this.parent.getAssetManager(), "Common/MatDefs/Misc/Particle.j3md");
+        this.smokeMat.setTexture("Texture", this.parent.getAssetManager().loadTexture("Textures/Terrain/dust.png"));
+        this.smokeMat.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
+        this.smokeMat.setBoolean("PointSprite", true);
+        
+        this.audioGo = new AudioNode(assetManager, "Sounds/zuendung.wav", AudioData.DataType.Buffer);
+        this.audioGo.setPositional(true);
+        this.audioGo.setLooping(false);
+        this.audioGo.setVolume(2);
+        this.vehicleNode.attachChild(this.audioGo);
+
+        this.audioRun = new AudioNode(assetManager, "Sounds/motor.wav", AudioData.DataType.Buffer);
+        this.audioRun.setPositional(true);
+        this.audioRun.setLooping(true);
+        this.audioRun.setVolume(1);
+        this.vehicleNode.attachChild(this.audioRun);
+        
+        this.audioVelo = new AudioNode(assetManager, "Sounds/test2.wav", AudioData.DataType.Buffer);
+        this.audioVelo.setPositional(true);
+        this.audioVelo.setLooping(false);
+        this.audioVelo.setVolume(1);
+        this.vehicleNode.attachChild(this.audioVelo);
+
+        this.audioHorn = new AudioNode(assetManager, "Sounds/horn.wav", AudioData.DataType.Buffer);
+        this.audioHorn.setPositional(true);
+        this.audioHorn.setLooping(false);
+        this.audioHorn.setVolume(1);
+        this.vehicleNode.attachChild(this.audioHorn);
+        
+        this.audioBack = new AudioNode(assetManager, "Sounds/piepen.wav", AudioData.DataType.Buffer);
+        this.audioBack.setPositional(true);
+        this.audioBack.setLooping(true);
+        this.audioBack.setVolume(1);
+        this.vehicleNode.attachChild(this.audioBack);
+
+        this.audioGo.play();
+        
         this.initJeep(initPosition);
+        this.audioRun.play();
+    }
+    public void horn() {
+        this.audioHorn.play();
     }
     
     public void setTarget(RigidBodyControl target) {
@@ -105,39 +161,114 @@ public class Jeep2 {
         this.updateCam();
         this.cam.setLocation(camTarget);     
     }
+
+    public boolean isCongratulation() {
+        return this.congratulation;
+    }
+
+    public void setCongratulation() {
+        this.congratulation = true;
+        this.gameOver = true;
+        this.gameOverSince = System.currentTimeMillis();
+        Hud.getDefault().playCongratulationSound();
+    }
     
     public long getLastMoveDuration() {
         return System.currentTimeMillis() - this.lastPositionChange;
     }
     
+    public void update() {
+        if (!this.gameOver) {
+            this.updateBodyEffects();
+            this.updateCam();
+            this.updateKeys();
+            this.updateWheelSkid();
+        } else {
+            if (System.currentTimeMillis() - this.gameOverSince > 5000 && this.vehicle != null) {
+                this.parent.getRootNode().detachChild(this.vehicleNode);
+                this.parent.getRootNode().detachAllChildren();
+                this.parent.getPhysicsSpace().destroy();
+                this.vehicle = null;
+                this.audioBack.stop();
+                this.audioGo.stop();
+                this.audioHorn.stop();
+                this.audioRun.stop();
+                this.audioVelo.stop();
+ 
+                this.parent.reinet();
+            }
+        }
+    }
+    
+    public void updateWheelSkid() {
+        float treshold = 0.1f;
+        for (int i = 0; i < 4; ++i) {
+            if (this.vehicle.getWheel(i).getSkidInfo() < treshold) {
+                Vector3f position = this.vehicle.getWheel(i).getWheelSpatial().getWorldTranslation();
+                position.y -= 0.4f;
+                this.addDust(position);
+
+            }
+        }
+        List<Long> remove = new ArrayList<>();
+        for (long then : this.particleEmitterMap.keySet()) {
+            long now = System.currentTimeMillis();
+            if (now - then > 60000) {
+                this.particleEmitterMap2.get(this.particleEmitterMap.get(then)).killAllParticles();
+                this.parent.getRootNode().detachChild(this.particleEmitterMap.get(then));
+                remove.add(then);
+            }
+
+        }
+        for (long then : remove) {
+            this.particleEmitterMap2.remove(this.particleEmitterMap.get(then));
+            this.particleEmitterMap.remove(then);
+        }
+    }
+    
     public void updateKeys() {
         float speed = Math.min(this.maxSpeed, this.getSpeed());
         float accelerationPower = 1 - speed / this.maxSpeed;
-        
-        
-        
         float accelerationForce = accelerationPower * this.maxAccelerationForce;
-        if (this.key[0][1]) {
+        if (this.key[0][1]) {           
             if (accelerationPower == 1 && !this.sport) {
                 this.turbo();
             }
+
             if (this.forward) {
                 this.accelerationValue += accelerationForce;
+                this.vehicle.accelerate(this.accelerationValue);
+                this.audioVelo.play();
             } else {
-                this.accelerationValue -= accelerationForce;
+                if (speed > 0) {
+                    this.vehicle.brake(this.brakeForce);
+                } else {
+                    this.vehicle.brake(0f);
+                    this.forward = true;
+                    this.audioBack.stop();
+                }
+            }  
+        } else if (this.key[2][1]) {           
+            if (accelerationPower == 1 && !this.sport) {
+                this.turbo();
             }
-            this.vehicle.accelerate(this.accelerationValue);    
-        } else {
-            this.accelerationValue = 0;
-            this.vehicle.accelerate(this.accelerationValue);
-        }
-        
-        if (this.key[2][1]) {
-            this.vehicle.brake(this.brakeForce);
-        } else {
-            this.vehicle.brake(0f);
-        }
 
+            if (!this.forward) {
+                this.accelerationValue += accelerationForce;
+                this.vehicle.accelerate(-1 * this.accelerationValue);
+                this.audioVelo.play();
+            } else {
+                if (speed > 0) {
+                    this.vehicle.brake(this.brakeForce);
+                } else {
+                    this.vehicle.brake(0f);
+                    this.audioBack.play();
+                    this.forward = false;
+                }
+            }  
+        } else {
+            this.vehicle.accelerate(0);
+        }
         if (this.key[1][0]) {
             if (this.currentSteeringValue < this.maxSteeringValue) {
                 this.currentSteeringValue += this.steeringDeltaValue;
@@ -233,8 +364,6 @@ public class Jeep2 {
     
     public void updateCam(){
         if (!this.gameOver) {
-            this.updateBodyEffects();
-            this.updateKeys();
             if (this.vehicle.getPhysicsLocation().y < 1) {
                 this.setGameOver();
             }
@@ -306,13 +435,6 @@ public class Jeep2 {
                 }
             }
             SceneControll.getDefault().checkTarget(this.parent);
-        } else {
-            if (System.currentTimeMillis() - this.gameOverSince > 5000 && this.vehicle != null) {
-                this.parent.getRootNode().detachChild(this.vehicleNode);
-                this.parent.getRootNode().detachAllChildren();
-                this.parent.getPhysicsSpace().destroy();
-                this.vehicle = null;
-            }
         }
     }
     
@@ -358,7 +480,6 @@ public class Jeep2 {
         }
         
         //create vehicle node
-        this.vehicleNode = new Node("vehicleNode");
         this.vehicleNode.setLocalTranslation(initPosition);
         this.vehicleNode.rotate(0, (float) Math.toRadians(this.rotateY), 0);
                 
@@ -402,16 +523,11 @@ public class Jeep2 {
         float yOff = 0.5f;
         float xOff = 1f;
         float zOff = 1.8f;
-        this.vehicle.setFriction(0.6f);
-        this.vehicle.setFrictionSlip(1f);
+        this.vehicle.setFriction(2f);
+        this.vehicle.setFrictionSlip(2f);
         Material mat_wheel = new Material(
             assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-//        Material mat_wheel = new Material(
-//            assetManager, "Common/MatDefs/Light/Lighting.j3md");
-//        
-//        mat_wheel.getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
-//
-//        mat_wheel.setTexture("DiffuseMap", assetManager.loadTexture("Textures/Rad_alpha.png"));
+
         
         
         mat_wheel.setTexture("ColorMap",
@@ -502,6 +618,32 @@ public class Jeep2 {
         return 0;
     }
     
+    private void addDust(Vector3f location) {     
+        Node tmp = new Node();
+        ParticleEmitter dust = new ParticleEmitter("dust effect", Type.Point, 1);
+        tmp.attachChild(dust);
+        this.parent.getRootNode().attachChild(tmp);
+        dust.setNumParticles(1);
+        dust.setLocalTranslation(location);
+        dust.setFaceNormal(Vector3f.NAN);
+        dust.setParticlesPerSec(1);
+        dust.setMaterial(this.smokeMat);
+        dust.setStartColor(ColorRGBA.White);
+        dust.setEndColor(ColorRGBA.White);
+        dust.setStartSize(0.1f);
+        dust.setEndSize(0.1f);
+        dust.setImagesX(1); // columns
+        dust.setImagesY(1); // rows
+        dust.setSelectRandomImage(false);
+        dust.setLowLife(1f);
+        dust.setHighLife(1f);
+        dust.setRotateSpeed(0.5f);
+        dust.emitAllParticles();
+        this.particleEmitterMap.put(System.currentTimeMillis(), tmp);
+        this.particleEmitterMap2.put(tmp, dust);
+    }
+    
+    
     private void explode() {     
         Material shockWaveMaterial = new Material(
         this.parent.getAssetManager(), "Common/MatDefs/Misc/Particle.j3md");
@@ -563,8 +705,10 @@ public class Jeep2 {
       
     public void setGameOver() {
         if (!this.gameOver) {
+            this.congratulation = false;
             this.gameOver = true;
             this.gameOverSince = System.currentTimeMillis();
+            Hud.getDefault().playGameOverSound();
             this.explode();
         }
     }

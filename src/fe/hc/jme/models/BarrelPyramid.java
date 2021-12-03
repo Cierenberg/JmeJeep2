@@ -39,7 +39,7 @@ public class BarrelPyramid implements ITarget{
         for (int i = count; i > 1; --i) {
             if (interlaced && i % 2 == 0 || !interlaced) {
                 this.barrelPyramid.attachChild(new BarrelPane(parent, new Vector3f(this.position.x, this.position.y, this.position.z), i, false).getNode());
-                System.out.print(this.position.y + " / ");
+//                System.out.print(this.position.y + " / ");
                 this.position.y += Barrel.HEIGHT;
             }
         }

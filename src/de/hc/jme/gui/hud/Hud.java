@@ -5,6 +5,8 @@
  */
 package de.hc.jme.gui.hud;
 
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioNode;
 import com.jme3.font.BitmapFont;
 import com.jme3.font.BitmapText;
 import com.jme3.math.ColorRGBA;
@@ -24,6 +26,8 @@ public class Hud {
     private BitmapText guiText[] = new BitmapText[5];
     private float[] padPosition = {0, 0, 0, 0};
     private long targetTime = Long.MAX_VALUE;
+    private AudioNode audioGameOver = null;
+    private AudioNode audioCongratulation = null;
     
     private Hud() {
     }
@@ -33,9 +37,33 @@ public class Hud {
     }
     
     public void setParent(TestPhysicsCar parent) {
-        this.parent = parent;
-        this.guiNode = this.parent.getGuiNode();
-        this.arialFont = this.parent.getAssetManager().loadFont("Interface/Fonts/digital.fnt");
+        if (this.parent == null) {
+            this.parent = parent;
+            this.guiNode = this.parent.getGuiNode();
+            this.arialFont = this.parent.getAssetManager().loadFont("Interface/Fonts/digital.fnt");
+            this.audioGameOver = new AudioNode(this.parent.getAssetManager(), "Sounds/sadtrombone.wav", AudioData.DataType.Buffer);
+            this.audioGameOver.setPositional(false);
+            this.audioGameOver.setLooping(false);
+            this.audioGameOver.setVolume(2);
+            this.parent.getRootNode().attachChild(this.audioGameOver);
+
+            this.audioCongratulation = new AudioNode(this.parent.getAssetManager(), "Sounds/Beifahl.wav", AudioData.DataType.Buffer);
+            this.audioCongratulation.setPositional(false);
+            this.audioCongratulation.setLooping(false);
+            this.audioCongratulation.setVolume(2);
+            this.parent.getRootNode().attachChild(this.audioCongratulation);
+        } else {
+            this.parent.getRootNode().attachChild(this.audioGameOver);
+            this.parent.getRootNode().attachChild(this.audioCongratulation);
+        }
+    }
+    
+    public void playGameOverSound() {
+        this.audioGameOver.play();
+    }
+    
+    public void playCongratulationSound() {
+        this.audioCongratulation.play();
     }
     
     public void startTargetTime() {
@@ -59,15 +87,24 @@ public class Hud {
                               
             float[] displayDimension = {this.parent.getAppSettings().getWidth(), this.parent.getAppSettings().getHeight()}; 
             this.guiNode.detachAllChildren();
-            Picture pic = new Picture("Gear Picture");
-            if (this.parent.getJeep().isForward()) {
-                pic.setImage(this.parent.getAssetManager(), "Textures/forward.png", true);
-            } else {
-                pic.setImage(this.parent.getAssetManager(), "Textures/backward.png", true);
-            }
-            float width = displayDimension[0] / 10;
-            float margin = width / 8;
-            if (!this.parent.getJeep().isGameOver()) {  
+            
+            if (this.parent.getJeep().isCongratulation()) {  
+                Picture picHappy = new Picture("congratulation");
+                picHappy.setImage(this.parent.getAssetManager(), "Textures/congratulation.png", true);
+                float picWidth = displayDimension[0] - 50;
+                picHappy.setWidth(picWidth);
+                picHappy.setHeight(picWidth / 2);
+                picHappy.setPosition(20, (displayDimension[1] - (picWidth / 2)) / 2);
+                this.guiNode.attachChild(picHappy);     
+            } else if (!this.parent.getJeep().isGameOver()) {  
+                Picture pic = new Picture("Gear Picture");
+                if (this.parent.getJeep().isForward()) {
+                    pic.setImage(this.parent.getAssetManager(), "Textures/forward.png", true);
+                } else {
+                    pic.setImage(this.parent.getAssetManager(), "Textures/backward.png", true);
+                }
+                float width = displayDimension[0] / 10;
+                float margin = width / 8;
                 pic.setWidth(width);
                 pic.setHeight(width / 2);
                 pic.setPosition(displayDimension[0] - width - margin, displayDimension[1] - (width / 2) - margin);
@@ -92,11 +129,19 @@ public class Hud {
                 picTacho.setHeight(1.5f * width);
                 picTacho.setPosition(displayDimension[0] - 2 * width - margin, displayDimension[1] - 2 * width - 3 * margin);
                 this.guiNode.attachChild(picTacho); 
+            } else {
+                Picture picSad = new Picture("Game over");
+                picSad.setImage(this.parent.getAssetManager(), "Textures/gameover.png", true);
+                float picWwidth = displayDimension[0] - 50;
+                picSad.setWidth(picWwidth);
+                picSad.setHeight(picWwidth / 2);
+                picSad.setPosition(20, (displayDimension[1] - (picWwidth / 2)) / 2);
+                this.guiNode.attachChild(picSad);     
             }
             
             long moveDuration = this.parent.getJeep().getLastMoveDuration();
             
-            if (this.isTagetTimeStarted()) {
+            if (this.isTagetTimeStarted() && !this.parent.getJeep().isCongratulation()) {
                 long milliesLeft = this.targetTime - System.currentTimeMillis();
                 if (milliesLeft < 0 && !this.parent.getJeep().isGameOver()) {
                     this.parent.getJeep().setGameOver();
@@ -105,29 +150,22 @@ public class Hud {
                     long minute = seconds / 60;
                     seconds -= minute * 60;
                     String textTime = minute + "Min " + seconds + "Sek";
-//                    String textSpeed = "Km/h: " + this.parent.getJeep().getSpeed();
-    //                System.out.println(text);
                     BitmapText textDisplayTime = new BitmapText(this.arialFont, false);
-//                    BitmapText textDisplaySpeed = new BitmapText(this.arialFont, false);
 
                     textDisplayTime.setSize(this.arialFont.getCharSet().getRenderedSize() * 2); 
                     textDisplayTime.setColor((milliesLeft < 60000)?ColorRGBA.Red:ColorRGBA.Green);
                     textDisplayTime.setText(textTime);
-                    textDisplayTime.setLocalTranslation(10f, 40f, 10f);
+                    textDisplayTime.setLocalTranslation(10f, 50f, 10f);
 
-//                    textDisplaySpeed.setSize(this.arialFont.getCharSet().getRenderedSize() * 2); 
-//                    textDisplaySpeed.setColor(ColorRGBA.Blue);
-//                    textDisplaySpeed.setText(textSpeed);
-//                    textDisplaySpeed.setLocalTranslation(10f, 100f, 10f);
                     if (!this.parent.getJeep().isGameOver()) {
                         this.guiNode.attachChild(textDisplayTime);    
-//                        this.guiNode.attachChild(textDisplaySpeed);
                    }
                 }
             }
                      
             if (moveDuration > 3000 && !this.parent.getJeep().isGameOver()) {
-                width = (Float) (displayDimension[0] / 3);
+                Picture pic = new Picture("misc");
+                float width = (Float) (displayDimension[0] / 3);
                 pic = new Picture("Count Down");
                 pic.setWidth(width);
                 pic.setHeight(width * 1.2f);

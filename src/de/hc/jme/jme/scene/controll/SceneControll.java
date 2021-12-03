@@ -27,7 +27,8 @@ public class SceneControll {
         TargetData.add(0, new TargetData(TargetData.TargetType.PYRAMID_INTERLACED, 10, new Vector3f(-965, 0, 1930)));
         
         TargetData.add(1, new TargetData(TargetData.TargetType.TOWER, 7, new Vector3f(-1496, 0, -1404)));
-        TargetData.add(1, new TargetData(TargetData.TargetType.PYRAMID_NORMAL, 5, new Vector3f(0, 0, 0)));        
+        TargetData.add(1, new TargetData(TargetData.TargetType.PYRAMID_NORMAL, 5, new Vector3f(-1497, 0, -1405)));        
+//        TargetData.add(1, new TargetData(TargetData.TargetType.PYRAMID_NORMAL, 5, new Vector3f(0, 0, 0)));        
     }
     
     public static SceneControll getDefault() {
@@ -35,6 +36,7 @@ public class SceneControll {
     }
     
     public void startGame(TestPhysicsCar parent) {
+        TargetData.restart();
         this.target = TargetData.initNext(parent);
     }
     
@@ -49,6 +51,7 @@ public class SceneControll {
                     this.target = TargetData.initNext(parent);
                 }
             }
-        }
+        } 
+
     };
 }

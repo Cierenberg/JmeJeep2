@@ -74,6 +74,7 @@ public class Barrel implements ITarget{
         barrelSpatial.setShadowMode(RenderQueue.ShadowMode.Cast);
 
         this.barrel.attachChild(barrelSpatial);
+        this.barrelPhysikAlias.setCollisionGroup(2);
     }
     
     public Node getNode(TestPhysicsCar parent) {

@@ -54,55 +54,67 @@ import de.hc.jme.jme.models.vehicle.Jeep2;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import de.hc.jme.jme.utility.Utility;
 import de.hc.jme.terrain.Island;
+import sun.jvm.hotspot.debugger.win32.coff.TestDebugInfo;
 
 public class TestPhysicsCar extends SimpleApplication {
 
     private BulletAppState bulletAppState;
     private Jeep2 jeep; 
     private Island island;
-    private int islandIndex = 1; 
+    private int islandIndex = 1;
+    private boolean restart = false;
+    
     
     public static void main(String[] args) {
         TestPhysicsCar app = new TestPhysicsCar();
         app.start();
     }
-
+    
+    public void reinet() {
+        this.restart = true;
+        
+        this.rootNode.detachAllChildren();
+        this.bulletAppState.cleanup();
+//      this.bulletAppState.stopPhysics();
+        this.island = null;
+        this.jeep = null;
+        System.gc();
+        
+        this.simpleInitApp();
+    }
+    
+    
     @Override
     public void simpleInitApp() {
-        this.setDisplayFps(true);
-        AppSettings newSettings = new AppSettings(true);
-        newSettings.setFrameRate(30);
-        setSettings(newSettings);
-        bulletAppState = new BulletAppState();
-        stateManager.attach(bulletAppState);
-        bulletAppState.setDebugEnabled(false);
+        if (!this.restart) {
+            this.setDisplayFps(true);
+            AppSettings newSettings = new AppSettings(true);
+            newSettings.setFrameRate(30);
+            setSettings(newSettings);
+            this.setUpLight();
+            this.setupKeys();
+        }
+        this.bulletAppState = new BulletAppState();
+        this.stateManager.attach(bulletAppState);
+        this.bulletAppState.setDebugEnabled(false);
+        
+
         this.island = new Island(this, false, this.islandIndex);
-        this.getRootNode().attachChild(SkyFactory.createSky(getAssetManager(), "Textures/Sky/Bright/BrightSky.dds", SkyFactory.EnvMapType.CubeMap));
-        this.setUpLight();
+        this.getRootNode().attachChild(SkyFactory.createSky(getAssetManager(), "Textures/Sky/Bright/BrightSky.dds", SkyFactory.EnvMapType.CubeMap));        
         RigidBodyControl islandRigidBodyControl = new RigidBodyControl(0.0f);
         this.island.getTerrain().addControl(islandRigidBodyControl);
-        getPhysicsSpace().add(islandRigidBodyControl);
-        setupKeys();
-        this.jeep = new Jeep2(this, true, new Vector3f(-1580, 0, -1485), 45);
+        this.getPhysicsSpace().add(islandRigidBodyControl);
+        this.jeep = new Jeep2(this, false, new Vector3f(-1580, 0, -1485), 45);
 //        this.jeep = new Jeep2(this, true, new Vector3f(-1200, 0, -1000), 45);
 //        this.jeep = new Jeep2(this, false, new Vector3f(0, 0, 0), 45);
         
         this.rootNode.attachChild(this.jeep.getVehicleNode());
-        getPhysicsSpace().add(this.jeep.getVehicleControl());
+        this.getPhysicsSpace().add(this.jeep.getVehicleControl());
         this.jeep.setCam(cam);
-//        this.rootNode.attachChild(new Barrel(this, new Vector3f(-1496, 0, -1404), false).getNode());
-        flyCam.setEnabled(false);
+        this.flyCam.setEnabled(false);
         
         SceneControll.getDefault().startGame(this);
         Hud.getDefault().setParent(this);
-        this.settings.setFrameRate(30);
-//        BarrelTower barrelTower = new BarrelTower(this, new Vector3f(-1496, 0, -1404), 10);
-//        this.rootNode.attachChild(barrelTower.getNode());
-//        this.jeep.setTarget(barrelTower.getTarget());
-
-//        CameraNode camNode = new CameraNode("CamNode", cam);
-//        camNode.setLocalTranslation(jeep.getVehicleNode().getLocalTranslation());
-//        camNode.lookAt(jeep.getVehicleNode().getLocalTranslation().negate(), Vector3f.UNIT_Y);
     }
     
     public int getIsle() {
@@ -148,7 +160,7 @@ public class TestPhysicsCar extends SimpleApplication {
                jeep.brake();
             }
             if (binding.equals("Space")) {
-               jeep.jump();
+               jeep.horn();
             }
             if (binding.equals("Reset")) {
                jeep.turbo();
@@ -204,7 +216,7 @@ public class TestPhysicsCar extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-        this.jeep.updateCam();
+        this.jeep.update();
         Hud.getDefault().update();
     }
 }

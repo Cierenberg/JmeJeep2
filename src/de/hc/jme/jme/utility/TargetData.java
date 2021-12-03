@@ -41,6 +41,12 @@ public class TargetData {
         list.add(targetData);
     }
     
+    public static void restart() {
+        TargetData.level = new int[] {-1, -1, -1};
+        TargetData.currentNode = null;
+        TargetData.currentTarget = null;
+    }
+    
     public static float getCurrentTresHold() {
         return TargetData.treshold;
     }
@@ -53,14 +59,16 @@ public class TargetData {
             Barrel.removeAllControls(parent);
             if (!Hud.getDefault().isTagetTimeStarted()) {
                 Hud.getDefault().startTargetTime();
+            } else {
+                System.out.println("de.hc.jme.jme.utility.TargetData.initNext()");
+                parent.getJeep().setCongratulation();
             }
-        }
-        System.out.println(parent.getIsle());
+        } 
+//        System.out.println(parent.getIsle());
         if (TargetData.map.get(parent.getIsle()) != null && TargetData.map.get(parent.getIsle()).size() > TargetData.level[parent.getIsle()]) {
-            
             TargetData data = TargetData.map.get(parent.getIsle()).get(TargetData.level[parent.getIsle()]);
             ITarget target = null;
-            if(data.getType().equals(TargetData.TargetType.PYRAMID_NORMAL)) {
+            if (data.getType().equals(TargetData.TargetType.PYRAMID_NORMAL)) {
                 target = new BarrelPyramid(parent, data.getPosition(), data.getCount(), false); 
             } else if(data.getType().equals(TargetData.TargetType.PYRAMID_INTERLACED)) {
                 target = new BarrelPyramid(parent, data.getPosition(), data.getCount(), true);
@@ -75,7 +83,7 @@ public class TargetData {
                 parent.getRootNode().attachChild(TargetData.currentNode);
                 parent.getJeep().setTarget(TargetData.currentTarget);
                 return TargetData.currentTarget;
-            }
+            } 
         }
         return null;
     }
