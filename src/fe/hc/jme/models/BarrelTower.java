@@ -9,7 +9,7 @@ import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 import de.hc.jme.jme.utility.ITarget;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
@@ -18,12 +18,12 @@ import jme3test.bullet.TestPhysicsCar;
 public class BarrelTower implements ITarget{
     private static int towerInstancesCount = 0;
     private Node barrelTower = new Node("BarrelTower_" + (++ BarrelTower.towerInstancesCount));
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private Vector3f position;
     private RigidBodyControl barrelPhysikAlias;
     private float treshold;
 
-    public BarrelTower(TestPhysicsCar parent, Vector3f position, int count) {
+    public BarrelTower(Jeep2Scene parent, Vector3f position, int count) {
         this.parent = parent;
         this.position = position;
         Float offY = this.parent.getEnvironmentHeight(this.position.x, this.position.z);

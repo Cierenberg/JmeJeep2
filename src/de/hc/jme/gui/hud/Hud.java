@@ -10,9 +10,10 @@ import com.jme3.audio.AudioNode;
 import com.jme3.font.BitmapFont;
 import com.jme3.font.BitmapText;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector2f;
 import com.jme3.scene.Node;
 import com.jme3.ui.Picture;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
@@ -21,7 +22,7 @@ import jme3test.bullet.TestPhysicsCar;
 public class Hud {
     private final static Hud instance = new Hud();
     private Node guiNode;
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private BitmapFont arialFont;
     private BitmapText guiText[] = new BitmapText[5];
     private float[] padPosition = {0, 0, 0, 0};
@@ -36,7 +37,7 @@ public class Hud {
         return Hud.instance;
     }
     
-    public void setParent(TestPhysicsCar parent) {
+    public void setParent(Jeep2Scene parent) {
         if (this.parent == null) {
             this.parent = parent;
             this.guiNode = this.parent.getGuiNode();
@@ -82,11 +83,28 @@ public class Hud {
         }
     }
     
+    public void clean() {
+        if (this.guiNode != null) {
+            this.guiNode.detachAllChildren();
+        }
+    }
+    
     public void update() {
         if (this.guiNode != null) {
                               
             float[] displayDimension = {this.parent.getAppSettings().getWidth(), this.parent.getAppSettings().getHeight()}; 
             this.guiNode.detachAllChildren();
+
+            if (!this.parent.shouldBeonDesktop()) {        
+                Picture picPad = new Picture("Pad Picture");
+                this.padPosition = new float[] {displayDimension[0] - displayDimension[0]/3.5f, displayDimension[1]/14, displayDimension[0]/4, displayDimension[0]/4}; 
+                picPad.setImage(this.parent.getAssetManager(), "Textures/keypad.png", true);
+                picPad.setWidth(this.padPosition[2]);
+                picPad.setHeight(this.padPosition[3]);
+                picPad.setPosition(this.padPosition[0], this.padPosition[1]);
+                this.guiNode.attachChild(picPad);
+            }
+
             
             if (this.parent.getJeep().isCongratulation()) {  
                 Picture picHappy = new Picture("congratulation");
@@ -185,7 +203,47 @@ public class Hud {
                 } 
                 pic.setPosition(displayDimension[0] / 2 - width / 2, displayDimension[1] / 2 - (width / 2));
                 this.guiNode.attachChild(pic); 
+
             }
         }
     }
+    
+        /**
+     * Touch.
+     */
+    public void touch() {
+        if (this.parent != null) {
+            if (!this.parent.shouldBeonDesktop()) {
+                float touchWidthX = this.padPosition[2] / 3;
+                float touchWidthY = touchWidthX;
+                Vector2f position = this.parent.getInputManager().getCursorPosition();
+
+                if (position.getX() > this.padPosition[0] && position.getX() < (this.padPosition[0] + this.padPosition[2]) && position.getY() > this.padPosition[1] && position.getY() < (this.padPosition[1] + this.padPosition[3])) {
+                        float iX = position.getX() - this.padPosition[0];
+                        float iY = position.getY() - this.padPosition[1];
+                        boolean steering = false;
+                        if (iX < touchWidthX) {
+                                this.parent.getJeep().steerLeft();
+                                steering = true;
+                        }
+                        if (iX > this.padPosition[2] - touchWidthX) {
+                                this.parent.getJeep().steerRight();
+                                steering = true;
+                        }
+                        if (iY < touchWidthY) {
+                                this.parent.getJeep().brake();
+                                steering = true;
+                        }
+                        if (iY > this.padPosition[3] - touchWidthY) {
+                                this.parent.getJeep().accelerate();
+                                steering = true;
+                        }
+                        if (!steering) {
+                            this.parent.getJeep().horn();
+                        }
+                    }
+            }
+        }
+    }
+
 }

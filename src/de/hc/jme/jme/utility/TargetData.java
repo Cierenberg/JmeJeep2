@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
@@ -51,7 +51,7 @@ public class TargetData {
         return TargetData.treshold;
     }
     
-    public static RigidBodyControl initNext(TestPhysicsCar parent) {
+    public static RigidBodyControl initNext(Jeep2Scene parent) {
         TargetData.treshold = Float.MIN_VALUE;
         TargetData.level[parent.getIsle()] ++;
         if (TargetData.currentNode != null) {

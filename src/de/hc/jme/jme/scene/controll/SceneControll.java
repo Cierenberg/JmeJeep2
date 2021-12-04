@@ -8,7 +8,7 @@ package de.hc.jme.jme.scene.controll;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import de.hc.jme.jme.utility.TargetData;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
@@ -35,12 +35,12 @@ public class SceneControll {
         return SceneControll.instanz;
     }
     
-    public void startGame(TestPhysicsCar parent) {
+    public void startGame(Jeep2Scene parent) {
         TargetData.restart();
         this.target = TargetData.initNext(parent);
     }
     
-    public void checkTarget(TestPhysicsCar parent) {
+    public void checkTarget(Jeep2Scene parent) {
         if (this.target != null) {
             if(TargetData.getCurrentTresHold() > this.target.getPhysicsLocation().y) {
                 if (this.barrelWait ==  Long.MIN_VALUE) {

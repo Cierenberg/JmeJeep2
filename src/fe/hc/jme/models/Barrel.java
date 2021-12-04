@@ -15,7 +15,7 @@ import de.hc.jme.jme.utility.ITarget;
 
 import java.util.ArrayList;
 import java.util.List;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
@@ -26,7 +26,7 @@ public class Barrel implements ITarget{
     private static final List<RigidBodyControl> rigidBodyControols = new ArrayList<>();
     private Node barrel = new Node("Barrel_" + (++ Barrel.count));
     private Material[] materials;
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private Vector3f position;
     private boolean isMarked = false;
     public static final float WIDTH = 1.5f;
@@ -34,7 +34,7 @@ public class Barrel implements ITarget{
     private RigidBodyControl barrelPhysikAlias;
     private float treshold;
     
-    public Barrel(TestPhysicsCar parent, Vector3f position, boolean isMarked, boolean calculateY) {
+    public Barrel(Jeep2Scene parent, Vector3f position, boolean isMarked, boolean calculateY) {
         this.parent = parent;
         this.position = position;
         this.isMarked = isMarked;
@@ -77,7 +77,7 @@ public class Barrel implements ITarget{
         this.barrelPhysikAlias.setCollisionGroup(2);
     }
     
-    public Node getNode(TestPhysicsCar parent) {
+    public Node getNode(Jeep2Scene parent) {
         return this.barrel;
     }
 
@@ -86,7 +86,7 @@ public class Barrel implements ITarget{
         return this.barrelPhysikAlias;
     }
     
-    public static void removeAllControls(TestPhysicsCar parent) {
+    public static void removeAllControls(Jeep2Scene parent) {
         for (RigidBodyControl control : Barrel.rigidBodyControols) {
             parent.getPhysicsSpace().remove(control);
         }

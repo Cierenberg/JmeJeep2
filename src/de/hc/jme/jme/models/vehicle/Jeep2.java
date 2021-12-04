@@ -22,7 +22,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 import com.jme3.math.FastMath;
 import com.jme3.math.Matrix3f;
 import com.jme3.renderer.Camera;
@@ -41,10 +41,10 @@ import java.util.Map;
  * @author hendrik
  */
 public class Jeep2 {
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private AssetManager assetManager;
     private VehicleControl vehicle;
-    private float maxAccelerationForce = 0.3f;
+    private float maxAccelerationForce = 1f;
     private float maxSpeed = 150;
     private float brakeForce = 60.0f;
     private float maxSteeringValue = 0.45f;
@@ -95,7 +95,7 @@ public class Jeep2 {
     private AudioNode audioBack = null;
     
     
-    public Jeep2(TestPhysicsCar parent, boolean sport, Vector3f initPosition, float rotateY) {
+    public Jeep2(Jeep2Scene parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
         this.sport = sport;
         this.rotateY = rotateY;
@@ -195,7 +195,7 @@ public class Jeep2 {
                 this.audioRun.stop();
                 this.audioVelo.stop();
  
-                this.parent.reinet();
+                this.parent.reInit();
             }
         }
     }

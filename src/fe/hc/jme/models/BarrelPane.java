@@ -7,8 +7,7 @@ package fe.hc.jme.models;
 
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
-import jme3test.bullet.TestPhysicsCar;
-
+import de.hc.jme.scene.Jeep2Scene;
 /**
  *
  * @author hendrik
@@ -16,11 +15,11 @@ import jme3test.bullet.TestPhysicsCar;
 public class BarrelPane {
     private static int paneInstancesCount = 0;
     private Node barrelPane = new Node("BarrelPane_" + (++ BarrelPane.paneInstancesCount));
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private Vector3f position;
     
 
-    public BarrelPane(TestPhysicsCar parent, Vector3f position, int count, boolean calculateY) {
+    public BarrelPane(Jeep2Scene parent, Vector3f position, int count, boolean calculateY) {
         this.parent = parent;
         this.position = position;        
         this.init(count, calculateY);

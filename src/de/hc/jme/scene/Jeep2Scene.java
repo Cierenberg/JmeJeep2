@@ -1,45 +1,14 @@
-/*
- * Copyright (c) 2009-2021 jMonkeyEngine
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * * Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- * * Neither the name of 'jMonkeyEngine' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-package jme3test.bullet;
-
+package de.hc.jme.scene;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.AssetManager;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.PhysicsSpace;
+import com.jme3.input.MouseInput;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.AnalogListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
@@ -49,62 +18,61 @@ import com.jme3.scene.Spatial;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
 import com.jme3.system.AppSettings;
 import com.jme3.util.SkyFactory;
+import de.hc.jme.gui.controller.GuiController;
 import de.hc.jme.gui.hud.Hud;
 import de.hc.jme.jme.models.vehicle.Jeep2;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import de.hc.jme.jme.utility.Utility;
 import de.hc.jme.terrain.Island;
-import sun.jvm.hotspot.debugger.win32.coff.TestDebugInfo;
+import de.lessvoid.nifty.Nifty;
+import de.lessvoid.nifty.screen.Screen;
+import de.lessvoid.nifty.screen.ScreenController;
 
-public class TestPhysicsCar extends SimpleApplication {
+
+public class Jeep2Scene extends SimpleApplication implements ScreenController {
 
     private BulletAppState bulletAppState;
     private Jeep2 jeep; 
     private Island island;
     private int islandIndex = 1;
-    private boolean restart = false;
-    
-    
-    public static void main(String[] args) {
-        TestPhysicsCar app = new TestPhysicsCar();
-        app.start();
+    private boolean firstInit = true;
+    protected static Jeep2Scene CURRENT;
+    public static Jeep2Scene getCurrent() {
+        return Jeep2Scene.CURRENT;
+    }
+    private GuiController guiController;
+        
+    public GuiController getGuiController() {
+        return this.guiController;
     }
     
-    public void reinet() {
-        this.restart = true;
-        
-        this.rootNode.detachAllChildren();
-        this.bulletAppState.cleanup();
-//      this.bulletAppState.stopPhysics();
-        this.island = null;
-        this.jeep = null;
-        System.gc();
-        
+    public void reInit() {
+        this.guiController.start();
         this.simpleInitApp();
     }
     
-    
-    @Override
-    public void simpleInitApp() {
-        if (!this.restart) {
-            this.setDisplayFps(true);
-            AppSettings newSettings = new AppSettings(true);
-            newSettings.setFrameRate(30);
-            setSettings(newSettings);
+    public void init(int islandIndex, boolean jeep) {
+        this.islandIndex = islandIndex;
+        if (!this.firstInit) {
+            this.rootNode.detachAllChildren();
+            this.bulletAppState.cleanup();
+            this.bulletAppState.getPhysicsSpace().destroy();
+            this.bulletAppState.getPhysicsSpace().create();
+            this.island = null;
+            this.jeep = null;
+            System.gc();
+        } else {
+            Jeep2Scene.CURRENT = this;
             this.setUpLight();
-            this.setupKeys();
+            this.firstInit = false;
         }
-        this.bulletAppState = new BulletAppState();
-        this.stateManager.attach(bulletAppState);
-        this.bulletAppState.setDebugEnabled(false);
-        
 
         this.island = new Island(this, false, this.islandIndex);
         this.getRootNode().attachChild(SkyFactory.createSky(getAssetManager(), "Textures/Sky/Bright/BrightSky.dds", SkyFactory.EnvMapType.CubeMap));        
         RigidBodyControl islandRigidBodyControl = new RigidBodyControl(0.0f);
         this.island.getTerrain().addControl(islandRigidBodyControl);
         this.getPhysicsSpace().add(islandRigidBodyControl);
-        this.jeep = new Jeep2(this, false, new Vector3f(-1580, 0, -1485), 45);
+        this.jeep = new Jeep2(this, jeep, new Vector3f(-1580, 0, -1485), 45);
 //        this.jeep = new Jeep2(this, true, new Vector3f(-1200, 0, -1000), 45);
 //        this.jeep = new Jeep2(this, false, new Vector3f(0, 0, 0), 45);
         
@@ -114,7 +82,19 @@ public class TestPhysicsCar extends SimpleApplication {
         this.flyCam.setEnabled(false);
         
         SceneControll.getDefault().startGame(this);
+    }
+    @Override
+    public void simpleInitApp() {
+        Jeep2Scene.CURRENT = this;
+        this.setupKeys();
         Hud.getDefault().setParent(this);
+        
+        this.bulletAppState = new BulletAppState();
+        this.stateManager.attach(bulletAppState);
+        this.bulletAppState.setDebugEnabled(false);
+        if (this.guiController == null) {
+            this.guiController = new GuiController();
+        }
     }
     
     public int getIsle() {
@@ -168,6 +148,9 @@ public class TestPhysicsCar extends SimpleApplication {
             if (binding.equals("Gear")) {
                jeep.shift();
             }
+            if (binding.equals("Touch")) {
+               Hud.getDefault().touch();
+            }
         }
     };
 
@@ -180,7 +163,8 @@ public class TestPhysicsCar extends SimpleApplication {
         this.inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
         this.inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
         this.inputManager.addMapping("Gear", new KeyTrigger(KeyInput.KEY_RCONTROL));
-        
+        this.inputManager.addMapping("Touch", new MouseButtonTrigger(MouseInput.BUTTON_LEFT));
+
         this.inputManager.addListener(this.analogListener, "Lefts");
         this.inputManager.addListener(this.analogListener, "Rights");
         this.inputManager.addListener(this.analogListener, "Ups");
@@ -188,6 +172,7 @@ public class TestPhysicsCar extends SimpleApplication {
         this.inputManager.addListener(this.analogListener, "Space");
         this.inputManager.addListener(this.analogListener, "Reset");
         this.inputManager.addListener(this.analogListener, "Gear");
+        this.inputManager.addListener(this.analogListener, "Touch");
     }
 
     public Geometry getGeometry(Spatial spatial){
@@ -216,7 +201,36 @@ public class TestPhysicsCar extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-        this.jeep.update();
-        Hud.getDefault().update();
+        if (this.jeep != null) {
+            this.jeep.update();
+            Hud.getDefault().update();
+        } else {
+            Hud.getDefault().clean();;
+        }
+    }
+    
+    public boolean shouldBeonDesktop() {
+        return false;
+    }
+    
+    /* (non-Javadoc)
+     * @see de.lessvoid.nifty.screen.ScreenController#bind(de.lessvoid.nifty.Nifty, de.lessvoid.nifty.screen.Screen)
+     */
+    @Override
+    public void bind(Nifty nifty, Screen screen) {
+    }
+
+    /* (non-Javadoc)
+     * @see de.lessvoid.nifty.screen.ScreenController#onStartScreen()
+     */
+    @Override
+    public void onStartScreen() {
+    }
+
+    /* (non-Javadoc)
+     * @see de.lessvoid.nifty.screen.ScreenController#onEndScreen()
+     */
+    @Override
+    public void onEndScreen() {
     }
 }

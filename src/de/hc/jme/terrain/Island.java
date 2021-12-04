@@ -11,7 +11,7 @@ import com.jme3.terrain.geomipmap.TerrainQuad;
 import com.jme3.terrain.heightmap.AbstractHeightMap;
 import com.jme3.terrain.heightmap.ImageBasedHeightMap;
 import com.jme3.texture.Texture;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
@@ -24,7 +24,7 @@ import fe.hc.jme.models.Loop;
 public class Island {
     private TerrainQuad terrain;
     Material mat_terrain;
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private boolean addControl = false;
     private int isle = 0;
     private String[][] isles = 
@@ -35,7 +35,7 @@ public class Island {
     private Loop loop;
     
     
-    public Island(TestPhysicsCar parent, boolean control, int isle) {
+    public Island(Jeep2Scene parent, boolean control, int isle) {
         this.parent = parent;
         this.addControl = control;
         this.isle = isle;

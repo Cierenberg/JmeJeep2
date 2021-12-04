@@ -10,19 +10,19 @@ import com.jme3.material.Material;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Spatial;
-import jme3test.bullet.TestPhysicsCar;
+import de.hc.jme.scene.Jeep2Scene;
 
 /**
  *
  * @author hendrik
  */
 public class Loop{
-    private TestPhysicsCar parent;
+    private Jeep2Scene parent;
     private Spatial loopSpatial;
     public static final float HEIGHT = 25f;
     private RigidBodyControl loopPhysikAlias;
     
-    public Loop(TestPhysicsCar parent, Vector3f position) {
+    public Loop(Jeep2Scene parent, Vector3f position) {
         this.parent = parent;
         this.init(position);
     }
