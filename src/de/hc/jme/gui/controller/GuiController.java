@@ -21,7 +21,6 @@ public class GuiController implements ScreenController {
     
     public GuiController() {
         super();
-        System.out.println("new");
         this.init();
     }
     
@@ -34,10 +33,11 @@ public class GuiController implements ScreenController {
         
         Jeep2Scene.getCurrent().getViewPort().addProcessor(niftyDisplay);
         this.nifty.fromXml("Interface/screen.xml", "start", this);
+        this.nifty.getScreen("start").findNiftyControl("cb2", RadioButton.class).select();
+        this.nifty.getScreen("start").findNiftyControl("cb4", RadioButton.class).select();
     }
     
     public void start() {
-        System.out.println("de.hc.custom.scene.controller.GuiController.start()");
         this.nifty.gotoScreen("start");
     }
     

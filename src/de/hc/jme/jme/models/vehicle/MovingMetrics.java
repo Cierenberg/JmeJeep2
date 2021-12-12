@@ -5,7 +5,9 @@
  */
 package de.hc.jme.jme.models.vehicle;
 
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
+import java.awt.geom.Point2D;
 
 /**
  *
@@ -17,6 +19,8 @@ public class MovingMetrics {
     private double speed = Double.NEGATIVE_INFINITY;
     private double lastSpeed = Double.NEGATIVE_INFINITY;
     private double accelertation = 0;
+    private double direction;
+    private final Vector3f north = new Vector3f(0, 0, 0);
     
     public MovingMetrics(long time, Vector3f position) {
         this.lastTime = time;
@@ -26,13 +30,17 @@ public class MovingMetrics {
     public void addMessure(long time, Vector3f position) {
         long duration = time - this.lastTime;
         float distance = this.lastPosition.distance(position);
+        
         if (duration > 500) {
+            if (distance > .1f) {
+                this.direction = this.getYbasedDirection(position, this.lastPosition);
+            }
             double durationFaktor = 1000 / duration;
             double secDistance = distance * durationFaktor;
             this.lastSpeed = this.speed;
             this.speed = (secDistance * 3600) / 1000;
             this.lastPosition = position;
-            this.lastTime = time;
+            this.lastTime = time;      
             if (this.lastSpeed != Double.NEGATIVE_INFINITY) {
                 this.accelertation = Math.round((this.speed - this.lastSpeed) * 5);
             }
@@ -44,10 +52,36 @@ public class MovingMetrics {
         return (int) this.speed;
     }
 
+    public int getDirection() {
+        return (int) Math.round(this.direction);
+    }
+    
     public int getAcceleration() {
         return (int) this.accelertation;
     }
 
+    public int getYbasedDirection(Vector3f v) {
+        return this.getYbasedDirection(v, this.north);
+    }
+   
+    
+    private int getYbasedDirection(Vector3f v1, Vector3f v2) {
+        
+        double a = (v1.x - v2.x);
+        double b = (v1.z - v2.z);
+        double w = 0;
+        if (b != 0) {
+            w = Math.toDegrees(Math.atan(a/b)); 
+        }
+        if (w < 0) {
+            w = 180 + w;
+        }
+        if (a < 0) {
+            w = 180 + w;
+        }
+         
+        return (int) Math.round(w);
+    }
     
     @Override
     public String toString() {

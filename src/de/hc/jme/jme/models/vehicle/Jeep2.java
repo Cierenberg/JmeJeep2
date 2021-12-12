@@ -93,6 +93,8 @@ public class Jeep2 {
     private AudioNode audioVelo = null;
     private AudioNode audioHorn = null;
     private AudioNode audioBack = null;
+    private AudioNode audioYeehaw = null;
+    private long lastYehaw = System.currentTimeMillis();
     
     
     public Jeep2(Jeep2Scene parent, boolean sport, Vector3f initPosition, float rotateY) {
@@ -140,6 +142,13 @@ public class Jeep2 {
         this.audioBack.setVolume(1);
         this.vehicleNode.attachChild(this.audioBack);
 
+        this.audioYeehaw = new AudioNode(assetManager, "Sounds/yeehaw2.wav", AudioData.DataType.Buffer);
+        this.audioYeehaw.setPositional(true);
+        this.audioYeehaw.setLooping(false);
+        this.audioYeehaw.setVolume(1);
+        this.vehicleNode.attachChild(this.audioYeehaw);
+
+        
         this.audioGo.play();
         
         this.initJeep(initPosition);
@@ -183,6 +192,7 @@ public class Jeep2 {
             this.updateCam();
             this.updateKeys();
             this.updateWheelSkid();
+            this.updateYeeHaa();
         } else {
             if (System.currentTimeMillis() - this.gameOverSince > 5000 && this.vehicle != null) {
                 this.parent.getRootNode().detachChild(this.vehicleNode);
@@ -200,6 +210,27 @@ public class Jeep2 {
         }
     }
     
+    public void updateYeeHaa() {
+        int direction1 = this.metrics.getYbasedDirection(this.vehicleNode.getLocalRotation().getRotationColumn(2)); 
+        if (!this.forward) {
+            direction1 += 180;
+            direction1 %= 360;
+        }
+        int direction2 = this.metrics.getDirection();
+        if (direction1 > 270 && direction2 < 90) {
+            direction1 -= 360;
+        } else if (direction2 > 270 && direction1 < 90) {
+            direction2 -= 360;
+        }
+        int directionDelta = Math.abs(direction2 - direction1);
+        
+        if (directionDelta > 85 && this.metrics.getSpeed() > 18 && System.currentTimeMillis() - this.lastYehaw > 5000) {
+            this.lastYehaw = System.currentTimeMillis();
+            System.out.println(">: YeeHaw / " + this.lastYehaw);
+            this.audioYeehaw.play();
+        }
+    }
+  
     public void updateWheelSkid() {
         float treshold = 0.1f;
         for (int i = 0; i < 4; ++i) {

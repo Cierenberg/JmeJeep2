@@ -24,34 +24,34 @@ import de.hc.jme.jme.models.vehicle.Jeep2;
 import de.hc.jme.jme.scene.controll.SceneControll;
 import de.hc.jme.jme.utility.Utility;
 import de.hc.jme.terrain.Island;
-import de.lessvoid.nifty.Nifty;
-import de.lessvoid.nifty.screen.Screen;
-import de.lessvoid.nifty.screen.ScreenController;
 
-
-public class Jeep2Scene extends SimpleApplication implements ScreenController {
-
+public class Jeep2Scene extends SimpleApplication {
     private BulletAppState bulletAppState;
     private Jeep2 jeep; 
     private Island island;
     private int islandIndex = 1;
     private boolean firstInit = true;
     protected static Jeep2Scene CURRENT;
+    
+    
     public static Jeep2Scene getCurrent() {
         return Jeep2Scene.CURRENT;
     }
-    private GuiController guiController;
-        
+    
+    private GuiController guiController;    
+    
     public GuiController getGuiController() {
         return this.guiController;
     }
     
     public void reInit() {
-        this.guiController.start();
+        Hud.getDefault().setHide(true);
+        Hud.getDefault().clean();
         this.simpleInitApp();
     }
     
     public void init(int islandIndex, boolean jeep) {
+        Hud.getDefault().setHide(false);
         this.islandIndex = islandIndex;
         if (!this.firstInit) {
             this.rootNode.detachAllChildren();
@@ -79,21 +79,23 @@ public class Jeep2Scene extends SimpleApplication implements ScreenController {
         this.rootNode.attachChild(this.jeep.getVehicleNode());
         this.getPhysicsSpace().add(this.jeep.getVehicleControl());
         this.jeep.setCam(cam);
-        this.flyCam.setEnabled(false);
+        
         
         SceneControll.getDefault().startGame(this);
     }
     @Override
     public void simpleInitApp() {
-        Jeep2Scene.CURRENT = this;
-        this.setupKeys();
-        Hud.getDefault().setParent(this);
-        
-        this.bulletAppState = new BulletAppState();
-        this.stateManager.attach(bulletAppState);
-        this.bulletAppState.setDebugEnabled(false);
         if (this.guiController == null) {
+            Jeep2Scene.CURRENT = this;
+            this.setupKeys();
+            Hud.getDefault().setParent(this);
+            this.flyCam.setEnabled(false);
+            this.bulletAppState = new BulletAppState();
+            this.stateManager.attach(bulletAppState);
+            this.bulletAppState.setDebugEnabled(false);        
             this.guiController = new GuiController();
+        } else {
+            this.guiController.start();
         }
     }
     
@@ -108,14 +110,9 @@ public class Jeep2Scene extends SimpleApplication implements ScreenController {
 
         DirectionalLight sun = new DirectionalLight();
         sun.setDirection(new Vector3f(-0.1f, -0.7f, -1.0f));
-        this.rootNode.addLight(sun);
+        this.rootNode.addLight(sun);  
+    }  
 
-        final int SHADOWMAP_SIZE = 512;
-        DirectionalLightShadowRenderer dlsr = new DirectionalLightShadowRenderer(assetManager, SHADOWMAP_SIZE, 3);
-        dlsr.setLight(sun);
-        dlsr.setShadowIntensity(0.7f);
-        this.viewPort.addProcessor(dlsr);
-    }
     @Override
     public AssetManager getAssetManager() {
         return this.assetManager;
@@ -211,26 +208,5 @@ public class Jeep2Scene extends SimpleApplication implements ScreenController {
     
     public boolean shouldBeonDesktop() {
         return false;
-    }
-    
-    /* (non-Javadoc)
-     * @see de.lessvoid.nifty.screen.ScreenController#bind(de.lessvoid.nifty.Nifty, de.lessvoid.nifty.screen.Screen)
-     */
-    @Override
-    public void bind(Nifty nifty, Screen screen) {
-    }
-
-    /* (non-Javadoc)
-     * @see de.lessvoid.nifty.screen.ScreenController#onStartScreen()
-     */
-    @Override
-    public void onStartScreen() {
-    }
-
-    /* (non-Javadoc)
-     * @see de.lessvoid.nifty.screen.ScreenController#onEndScreen()
-     */
-    @Override
-    public void onEndScreen() {
     }
 }
