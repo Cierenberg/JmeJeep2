@@ -72,9 +72,10 @@ public class Jeep2Scene extends SimpleApplication {
         RigidBodyControl islandRigidBodyControl = new RigidBodyControl(0.0f);
         this.island.getTerrain().addControl(islandRigidBodyControl);
         this.getPhysicsSpace().add(islandRigidBodyControl);
-        this.jeep = new Jeep2(this, jeep, new Vector3f(-1580, 0, -1485), 45);
+//        this.jeep = new Jeep2(this, jeep, new Vector3f(-1580, 0, -1485), 45);
 //        this.jeep = new Jeep2(this, true, new Vector3f(-1200, 0, -1000), 45);
-//        this.jeep = new Jeep2(this, false, new Vector3f(0, 0, 0), 45);
+//        this.jeep = new Jeep2(this, jeep, new Vector3f(0, 0, 0), 45);
+        this.jeep = new Jeep2(this, jeep, new Vector3f(-1580, 0, -1485), 45);
         
         this.rootNode.attachChild(this.jeep.getVehicleNode());
         this.getPhysicsSpace().add(this.jeep.getVehicleControl());

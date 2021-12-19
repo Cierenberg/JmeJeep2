@@ -5,6 +5,7 @@
  */
 package de.hc.jme.jme.models.vehicle;
 
+import ch.qos.logback.classic.util.ContextInitializer;
 import com.jme3.asset.AssetManager;
 import com.jme3.audio.AudioData;
 import com.jme3.audio.AudioNode;
@@ -46,10 +47,10 @@ public class Jeep2 {
     private VehicleControl vehicle;
     private float maxAccelerationForce = 1f;
     private float maxSpeed = 150;
-    private float brakeForce = 60.0f;
+    private float brakeForce = 80.0f;
     private float maxSteeringValue = 0.45f;
     private float currentSteeringValue = 0.0f;
-    private float steeringDeltaValue = 0.1f;    
+    private float[] steeringDeltaValue = {0.04f, 0.02f};    
     private float accelerationValue = 0;
     final private Vector3f jumpForce = new Vector3f(0, 2000, 0);
     private Node vehicleNode;
@@ -95,7 +96,7 @@ public class Jeep2 {
     private AudioNode audioBack = null;
     private AudioNode audioYeehaw = null;
     private long lastYehaw = System.currentTimeMillis();
-    
+    private float[] runPitch = {0.5f, 0.5f, 1.5f, 0.005f};
     
     public Jeep2(Jeep2Scene parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
@@ -122,6 +123,7 @@ public class Jeep2 {
         this.audioRun.setPositional(true);
         this.audioRun.setLooping(true);
         this.audioRun.setVolume(1);
+        this.audioRun.setPitch(this.runPitch[1]);
         this.vehicleNode.attachChild(this.audioRun);
         
         this.audioVelo = new AudioNode(assetManager, "Sounds/test2.wav", AudioData.DataType.Buffer);
@@ -191,8 +193,10 @@ public class Jeep2 {
             this.updateBodyEffects();
             this.updateCam();
             this.updateKeys();
-            this.updateWheelSkid();
-            this.updateYeeHaa();
+            if (this.vehicle.getPhysicsLocation().y > 40) {
+                this.updateWheelSkid();
+                this.updateYeeHaa();
+            }
         } else {
             if (System.currentTimeMillis() - this.gameOverSince > 5000 && this.vehicle != null) {
                 this.parent.getRootNode().detachChild(this.vehicleNode);
@@ -224,7 +228,7 @@ public class Jeep2 {
         }
         int directionDelta = Math.abs(direction2 - direction1);
         
-        if (directionDelta > 85 && this.metrics.getSpeed() > 18 && System.currentTimeMillis() - this.lastYehaw > 5000) {
+        if (this.vehicle.getWheel(2).getSkidInfo() < 0.1 && directionDelta > 85 && this.metrics.getSpeed() > 18 && System.currentTimeMillis() - this.lastYehaw > 5000) {
             this.lastYehaw = System.currentTimeMillis();
             System.out.println(">: YeeHaw / " + this.lastYehaw);
             this.audioYeehaw.play();
@@ -238,9 +242,9 @@ public class Jeep2 {
                 Vector3f position = this.vehicle.getWheel(i).getWheelSpatial().getWorldTranslation();
                 position.y -= 0.4f;
                 this.addDust(position);
-
             }
         }
+
         List<Long> remove = new ArrayList<>();
         for (long then : this.particleEmitterMap.keySet()) {
             long now = System.currentTimeMillis();
@@ -259,20 +263,26 @@ public class Jeep2 {
     
     public void updateKeys() {
         float speed = Math.min(this.maxSpeed, this.getSpeed());
-        float accelerationPower = 1 - speed / this.maxSpeed;
+        float accelerationPower = .8f - speed / this.maxSpeed;
         float accelerationForce = accelerationPower * this.maxAccelerationForce;
         if (this.key[0][1]) {           
-            if (accelerationPower == 1 && !this.sport) {
+            if (accelerationPower >= .8 && !this.sport) {
                 this.turbo();
+                this.audioVelo.play();
             }
 
             if (this.forward) {
                 this.accelerationValue += accelerationForce;
                 this.vehicle.accelerate(this.accelerationValue);
-                this.audioVelo.play();
+                if (runPitch[1] < runPitch[2]) {
+                    runPitch[1] += runPitch[3];
+                }
             } else {
                 if (speed > 0) {
                     this.vehicle.brake(this.brakeForce);
+                    if (runPitch[1] > runPitch[0] + runPitch[3])  {
+                        runPitch[1] -= runPitch[3];
+                    }
                 } else {
                     this.vehicle.brake(0f);
                     this.forward = true;
@@ -280,17 +290,24 @@ public class Jeep2 {
                 }
             }  
         } else if (this.key[2][1]) {           
-            if (accelerationPower == 1 && !this.sport) {
+            if (accelerationPower >= .8 && !this.sport) {
                 this.turbo();
+                this.audioVelo.play();
             }
 
             if (!this.forward) {
                 this.accelerationValue += accelerationForce;
                 this.vehicle.accelerate(-1 * this.accelerationValue);
-                this.audioVelo.play();
+                if (runPitch[1] < runPitch[2]) {
+                    runPitch[1] += runPitch[3];
+                }
             } else {
                 if (speed > 0) {
                     this.vehicle.brake(this.brakeForce);
+                    if (runPitch[1] > runPitch[0] + runPitch[3])  {
+                        runPitch[1] -= runPitch[3];
+                    }
+
                 } else {
                     this.vehicle.brake(0f);
                     this.audioBack.play();
@@ -299,25 +316,42 @@ public class Jeep2 {
             }  
         } else {
             this.vehicle.accelerate(0);
+            if (runPitch[1] > runPitch[0] + runPitch[3])  {
+                runPitch[1] -= runPitch[3];
+            }
+            if (runPitch[1] > runPitch[0] + runPitch[3])  {
+                runPitch[1] -= runPitch[3];
+            }
+        }
+        this.audioRun.setPitch(this.runPitch[1]);
+        int deltaType = 0;
+        if (this.metrics.getSpeed() > 10) {
+            deltaType = 1;
         }
         if (this.key[1][0]) {
             if (this.currentSteeringValue < this.maxSteeringValue) {
-                this.currentSteeringValue += this.steeringDeltaValue;
+                this.currentSteeringValue += this.steeringDeltaValue[deltaType];
+            }
+            if (this.currentSteeringValue < 0) {
+                this.currentSteeringValue += this.steeringDeltaValue[deltaType];
             }
             this.steering = -1;
         } else if (this.key[1][2]) {
             if (this.currentSteeringValue > -1 * this.maxSteeringValue) {
-                this.currentSteeringValue -= this.steeringDeltaValue;
+                this.currentSteeringValue -= this.steeringDeltaValue[deltaType];
+            }
+            if (this.currentSteeringValue > 0) {
+                this.currentSteeringValue -= this.steeringDeltaValue[deltaType];
             }
             this.steering = 1;
         } else {
             if (this.currentSteeringValue < 0) {
-                this.currentSteeringValue += this.steeringDeltaValue;
+                this.currentSteeringValue += this.steeringDeltaValue[deltaType];
             }
             if (this.currentSteeringValue > 0) {
-                this.currentSteeringValue -= this.steeringDeltaValue;
+                this.currentSteeringValue -= this.steeringDeltaValue[deltaType];
             }
-            if (this.currentSteeringValue > -1 * this.steeringDeltaValue && this.currentSteeringValue < this.steeringDeltaValue) {
+            if (this.currentSteeringValue > -1 * this.steeringDeltaValue[deltaType] && this.currentSteeringValue < this.steeringDeltaValue[deltaType]) {
                 this.currentSteeringValue = 0;
             }
             this.steering = 0;
@@ -398,7 +432,7 @@ public class Jeep2 {
             if (this.vehicle.getPhysicsLocation().y < 1) {
                 this.setGameOver();
             }
-//            System.out.println(this.vehicle.getPhysicsLocation());
+            System.out.println(this.vehicle.getPhysicsLocation());
             if (this.metrics == null) {
                 this.metrics = new MovingMetrics(System.currentTimeMillis(), this.vehicle.getPhysicsLocation());
             } else {
@@ -446,17 +480,17 @@ public class Jeep2 {
                 }
 
 
-                Float camspeed = 0.01f * distance;
+                Float camspeed = 0.006f * Math.max(35, distance);
                 if (this.cam.getLocation().x < this.camTarget.x - (camspeed + .1f)) {
                     this.cam.getLocation().x += camspeed;
                 } else if (this.cam.getLocation().x > this.camTarget.x + (camspeed + .1f)) {
                     this.cam.getLocation().x -= camspeed;
                 } 
 
-                if (this.cam.getLocation().y < this.camTarget.y -(camspeed + .1f)) {
-                    this.cam.getLocation().y += camspeed;
+                if (this.cam.getLocation().y < this.camTarget.y -(camspeed / 3 + .1f)) {
+                    this.cam.getLocation().y += camspeed / 4;
                 } else if (this.cam.getLocation().y > this.camTarget.y + (camspeed + .1f)) {
-                    this.cam.getLocation().y -= camspeed;
+                    this.cam.getLocation().y -= camspeed / 4;
                 } 
 
                 if (this.cam.getLocation().z < this.camTarget.z -(camspeed + .1f)) {
@@ -527,9 +561,9 @@ public class Jeep2 {
             this.body.scale(1f, 1f, 1f);
         }
         if (this.sport) {
-            this.vehicle = new VehicleControl(compoundShape, 200);
+            this.vehicle = new VehicleControl(compoundShape, 150);
         } else {
-            this.vehicle = new VehicleControl(compoundShape, 400);
+            this.vehicle = new VehicleControl(compoundShape, 300);
         }
         this.vehicleNode.addControl(vehicle);
         float stiffness =  80f;//200=f1 car
@@ -554,8 +588,8 @@ public class Jeep2 {
         float yOff = 0.5f;
         float xOff = 1f;
         float zOff = 1.8f;
-        this.vehicle.setFriction(2f);
-        this.vehicle.setFrictionSlip(2f);
+        this.vehicle.setFriction(2.4f);
+        this.vehicle.setFrictionSlip(2.4f);
         Material mat_wheel = new Material(
             assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
 
@@ -729,8 +763,6 @@ public class Jeep2 {
                 this.vehicle.applyImpulse(this.vehicleNode.getLocalRotation().getRotationColumn(2).mult(this.getSpeed()).negateLocal(), this.vehicleNode.getLocalRotation().getRotationColumn(2).negateLocal());
             }
         }
-        
-        
         this.vehicle.applyImpulse(new Vector3f(1000, 20000, 100), Vector3f.ZERO);
     }
       

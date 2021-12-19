@@ -29,8 +29,8 @@ public class Island {
     private int isle = 0;
     private String[][] isles = 
     {
-        {"Textures/Terrain/Heightmap/height.jpg","Textures/Terrain/Heightmap/alpha_0.jpg", "Textures/Terrain/Heightmap/alpha_1.jpg"},
-        {"Textures/Terrain/Heightmap/two/height.jpg","Textures/Terrain/Heightmap/two/alpha_0.jpg", "Textures/Terrain/Heightmap/two/alpha_1.jpg"}        
+        {"Textures/Terrain/Heightmap/height_small.png","Textures/Terrain/Heightmap/alpha_0.jpg", "Textures/Terrain/Heightmap/alpha_1.jpg"},
+        {"Textures/Terrain/Heightmap/two/height_small.png","Textures/Terrain/Heightmap/two/alpha_0.jpg", "Textures/Terrain/Heightmap/two/alpha_1.jpg"}        
     };
     private Loop loop;
     
@@ -82,9 +82,10 @@ public class Island {
         /** 2. Create the height map */
         AbstractHeightMap heightmap = null;
         Texture heightMapImage = this.parent.getAssetManager().loadTexture(
-                this.isles[this.isle][0]);
+        this.isles[this.isle][0]);
         heightmap = new ImageBasedHeightMap(heightMapImage.getImage());
         heightmap.load();
+        heightmap.smooth(1f);
 
         /** 3. We have prepared material and heightmap.
          * Now we create the actual terrain:
@@ -94,13 +95,13 @@ public class Island {
          * 3.4) As LOD step scale we supply Vector3f(1,1,1).
          * 3.5) We supply the prepared heightmap itself.
          */
-        int patchSize = 65;
-        terrain = new TerrainQuad("my terrain", patchSize, 2049, heightmap.getHeightMap());
+        int patchSize = 16;
+        terrain = new TerrainQuad("my terrain", patchSize, 257, heightmap.getHeightMap());
 
         /** 4. We give the terrain its material, position & scale it, and attach it. */
         terrain.setMaterial(mat_terrain);
-        terrain.setLocalTranslation(0, -100, 0);
-        terrain.setLocalScale(2f, 1f, 2f);
+        terrain.setLocalTranslation(0, -12, 0);
+        terrain.setLocalScale(16f, 2f, 16f);
         this.parent.getRootNode().attachChild(terrain);
 
         /** 5. The LOD (level of detail) depends on were the camera is: */
