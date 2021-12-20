@@ -23,7 +23,7 @@ public class SceneControll {
     private SceneControll() {
         TargetData.add(0, new TargetData(TargetData.TargetType.PYRAMID_NORMAL, 3, new Vector3f(-1496, 0, -1404)));
         TargetData.add(0, new TargetData(TargetData.TargetType.PYRAMID_NORMAL, 5, new Vector3f(-578, 0, -275)));
-        TargetData.add(0, new TargetData(TargetData.TargetType.TOWER, 7, new Vector3f(455, 0, 1254)));
+        TargetData.add(0, new TargetData(TargetData.TargetType.TOWER, 7, new Vector3f(455, 0, 1154)));
         TargetData.add(0, new TargetData(TargetData.TargetType.PYRAMID_INTERLACED, 10, new Vector3f(-965, 0, 1930)));
         
         TargetData.add(1, new TargetData(TargetData.TargetType.TOWER, 7, new Vector3f(-1496, 0, -1404)));

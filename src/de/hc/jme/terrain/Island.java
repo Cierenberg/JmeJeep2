@@ -29,8 +29,8 @@ public class Island {
     private int isle = 0;
     private String[][] isles = 
     {
-        {"Textures/Terrain/Heightmap/height_small.png","Textures/Terrain/Heightmap/alpha_0.jpg", "Textures/Terrain/Heightmap/alpha_1.jpg"},
-        {"Textures/Terrain/Heightmap/two/height_small.png","Textures/Terrain/Heightmap/two/alpha_0.jpg", "Textures/Terrain/Heightmap/two/alpha_1.jpg"}        
+        {"Textures/Terrain/Heightmap/height_small.png","Textures/Terrain/Heightmap/alpha_0_small.jpg", "Textures/Terrain/Heightmap/alpha_1.jpg"},
+        {"Textures/Terrain/Heightmap/two/height_small.png","Textures/Terrain/Heightmap/two/alpha_0_small.jpg", "Textures/Terrain/Heightmap/two/alpha_1.jpg"}        
     };
     private Loop loop;
     
@@ -95,13 +95,13 @@ public class Island {
          * 3.4) As LOD step scale we supply Vector3f(1,1,1).
          * 3.5) We supply the prepared heightmap itself.
          */
-        int patchSize = 16;
+        int patchSize = 8;
         terrain = new TerrainQuad("my terrain", patchSize, 257, heightmap.getHeightMap());
 
         /** 4. We give the terrain its material, position & scale it, and attach it. */
         terrain.setMaterial(mat_terrain);
         terrain.setLocalTranslation(0, -12, 0);
-        terrain.setLocalScale(16f, 2f, 16f);
+        terrain.setLocalScale(16f, 1.8f, 16f);
         this.parent.getRootNode().attachChild(terrain);
 
         /** 5. The LOD (level of detail) depends on were the camera is: */

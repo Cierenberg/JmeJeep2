@@ -187,7 +187,7 @@ public class Hud {
                             this.guiNode.attachChild(this.pic); 
                            Picture picNadel = new Picture("Tacho pin");
                             picNadel.setImage(this.parent.getAssetManager(), "Textures/zeiger.png", true);
-                            picNadel.rotate(0, 0,(float) ((190 - this.parent.getJeep().getSpeed()) * Math.PI / 180.0));
+                            picNadel.rotate(0, 0,(float) ((190 - (this.parent.getJeep().getSpeed() * 2)) * Math.PI / 180.0));
                             
                             width = displayDimension[0] / 10;
                             margin = width / 8;

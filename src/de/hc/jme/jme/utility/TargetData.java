@@ -54,15 +54,13 @@ public class TargetData {
     public static RigidBodyControl initNext(Jeep2Scene parent) {
         TargetData.treshold = Float.MIN_VALUE;
         TargetData.level[parent.getIsle()] ++;
+        System.out.println("level :" + TargetData.level[parent.getIsle()]);
         if (TargetData.currentNode != null) {
             parent.getRootNode().detachChild(TargetData.currentNode);
             Barrel.removeAllControls(parent);
             if (!Hud.getDefault().isTagetTimeStarted()) {
                 Hud.getDefault().startTargetTime();
-            } else {
-                System.out.println("de.hc.jme.jme.utility.TargetData.initNext()");
-                parent.getJeep().setCongratulation();
-            }
+            } 
         } 
 //        System.out.println(parent.getIsle());
         if (TargetData.map.get(parent.getIsle()) != null && TargetData.map.get(parent.getIsle()).size() > TargetData.level[parent.getIsle()]) {
@@ -83,7 +81,10 @@ public class TargetData {
                 parent.getRootNode().attachChild(TargetData.currentNode);
                 parent.getJeep().setTarget(TargetData.currentTarget);
                 return TargetData.currentTarget;
-            } 
+            } else {
+                System.out.println("de.hc.jme.jme.utility.TargetData.initNext()");
+                parent.getJeep().setCongratulation();
+            }
         }
         return null;
     }

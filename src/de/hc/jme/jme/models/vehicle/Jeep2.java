@@ -45,12 +45,12 @@ public class Jeep2 {
     private Jeep2Scene parent;
     private AssetManager assetManager;
     private VehicleControl vehicle;
-    private float maxAccelerationForce = 1f;
-    private float maxSpeed = 150;
-    private float brakeForce = 80.0f;
-    private float maxSteeringValue = 0.45f;
+    private float maxAccelerationForce = .6f;
+    private float maxSpeed = 75;
+    private float brakeForce = 20.0f;
+    private float[] maxSteeringValue = {0.45f, 0.2f};
     private float currentSteeringValue = 0.0f;
-    private float[] steeringDeltaValue = {0.04f, 0.02f};    
+    private float[] steeringDeltaValue = {0.04f, 0.04f};    
     private float accelerationValue = 0;
     final private Vector3f jumpForce = new Vector3f(0, 2000, 0);
     private Node vehicleNode;
@@ -96,7 +96,7 @@ public class Jeep2 {
     private AudioNode audioBack = null;
     private AudioNode audioYeehaw = null;
     private long lastYehaw = System.currentTimeMillis();
-    private float[] runPitch = {0.5f, 0.5f, 1.5f, 0.005f};
+    private float[] runPitch = {0.5f, 0.5f, 1.5f, 0.004f};
     
     public Jeep2(Jeep2Scene parent, boolean sport, Vector3f initPosition, float rotateY) {
         this.parent = parent;
@@ -265,55 +265,59 @@ public class Jeep2 {
         float speed = Math.min(this.maxSpeed, this.getSpeed());
         float accelerationPower = .8f - speed / this.maxSpeed;
         float accelerationForce = accelerationPower * this.maxAccelerationForce;
-        if (this.key[0][1]) {           
-            if (accelerationPower >= .8 && !this.sport) {
+        boolean accelratable = this.getSpeed() < this.maxSpeed;
+        
+        if (this.key[0][1]) {
+            if (accelratable && accelerationPower >= .8 && !this.sport) {
                 this.turbo();
                 this.audioVelo.play();
             }
 
-            if (this.forward) {
-                this.accelerationValue += accelerationForce;
+            if (this.forward) {                
+                if (accelratable) {    
+                    this.accelerationValue += accelerationForce;
+                    if (runPitch[1] < runPitch[2]) {
+                        runPitch[1] += runPitch[3];
+                    }
+                    this.vehicle.brake(0);
+                } else {
+                    this.accelerationValue = 0;
+                }    
                 this.vehicle.accelerate(this.accelerationValue);
-                if (runPitch[1] < runPitch[2]) {
-                    runPitch[1] += runPitch[3];
-                }
             } else {
                 if (speed > 0) {
                     this.vehicle.brake(this.brakeForce);
-                    if (runPitch[1] > runPitch[0] + runPitch[3])  {
-                        runPitch[1] -= runPitch[3];
-                    }
                 } else {
                     this.vehicle.brake(0f);
                     this.forward = true;
                     this.audioBack.stop();
                 }
-            }  
-        } else if (this.key[2][1]) {           
-            if (accelerationPower >= .8 && !this.sport) {
+            } 
+        } else if (this.key[2][1]) {  
+            if (accelratable && accelerationPower >= .8 && !this.sport) {
                 this.turbo();
                 this.audioVelo.play();
             }
-
-            if (!this.forward) {
-                this.accelerationValue += accelerationForce;
-                this.vehicle.accelerate(-1 * this.accelerationValue);
-                if (runPitch[1] < runPitch[2]) {
-                    runPitch[1] += runPitch[3];
-                }
+            if (!this.forward) {                
+                if (accelratable) {    
+                    this.accelerationValue -= accelerationForce;
+                    if (runPitch[1] < runPitch[2]) {
+                        runPitch[1] += runPitch[3];
+                    }
+                    this.vehicle.brake(0);
+                } else {
+                    this.accelerationValue = 0;
+                }    
+                this.vehicle.accelerate(this.accelerationValue);
             } else {
                 if (speed > 0) {
                     this.vehicle.brake(this.brakeForce);
-                    if (runPitch[1] > runPitch[0] + runPitch[3])  {
-                        runPitch[1] -= runPitch[3];
-                    }
-
                 } else {
                     this.vehicle.brake(0f);
-                    this.audioBack.play();
                     this.forward = false;
+                    this.audioBack.play();
                 }
-            }  
+            } 
         } else {
             this.vehicle.accelerate(0);
             if (runPitch[1] > runPitch[0] + runPitch[3])  {
@@ -323,25 +327,29 @@ public class Jeep2 {
                 runPitch[1] -= runPitch[3];
             }
         }
+
+        
+        
         this.audioRun.setPitch(this.runPitch[1]);
         int deltaType = 0;
         if (this.metrics.getSpeed() > 10) {
             deltaType = 1;
         }
+        
         if (this.key[1][0]) {
-            if (this.currentSteeringValue < this.maxSteeringValue) {
+            if (this.currentSteeringValue < this.maxSteeringValue[deltaType]) {
                 this.currentSteeringValue += this.steeringDeltaValue[deltaType];
             }
             if (this.currentSteeringValue < 0) {
-                this.currentSteeringValue += this.steeringDeltaValue[deltaType];
+                this.currentSteeringValue = 0;
             }
             this.steering = -1;
         } else if (this.key[1][2]) {
-            if (this.currentSteeringValue > -1 * this.maxSteeringValue) {
+            if (this.currentSteeringValue > -1 * this.maxSteeringValue[deltaType]) {
                 this.currentSteeringValue -= this.steeringDeltaValue[deltaType];
             }
             if (this.currentSteeringValue > 0) {
-                this.currentSteeringValue -= this.steeringDeltaValue[deltaType];
+                this.currentSteeringValue = 0;
             }
             this.steering = 1;
         } else {
@@ -432,7 +440,7 @@ public class Jeep2 {
             if (this.vehicle.getPhysicsLocation().y < 1) {
                 this.setGameOver();
             }
-            System.out.println(this.vehicle.getPhysicsLocation());
+//            System.out.println(this.vehicle.getPhysicsLocation());
             if (this.metrics == null) {
                 this.metrics = new MovingMetrics(System.currentTimeMillis(), this.vehicle.getPhysicsLocation());
             } else {
@@ -561,9 +569,9 @@ public class Jeep2 {
             this.body.scale(1f, 1f, 1f);
         }
         if (this.sport) {
-            this.vehicle = new VehicleControl(compoundShape, 150);
+            this.vehicle = new VehicleControl(compoundShape, 100);
         } else {
-            this.vehicle = new VehicleControl(compoundShape, 300);
+            this.vehicle = new VehicleControl(compoundShape, 200);
         }
         this.vehicleNode.addControl(vehicle);
         float stiffness =  80f;//200=f1 car
@@ -574,8 +582,8 @@ public class Jeep2 {
             compValue = .3f; //(should be lower than damp)
             dampValue = .6f;
             this.maxAccelerationForce *= 1.2f;
-            this.maxSpeed *= 1.5f;
-            this.maxSteeringValue = .5f;
+            this.maxSpeed *= 1.33f;
+            this.maxSteeringValue[0] = .5f;
         }
         this.vehicle.setSuspensionCompression(compValue * 2.0f * FastMath.sqrt(stiffness));
         this.vehicle.setSuspensionDamping(dampValue * 2.0f * FastMath.sqrt(stiffness));
